@@ -53,7 +53,7 @@ repos:
       - id: yamllint
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.44.0
+    rev: a8d8e187146634c459c27ade2d3e338569378720 # frozen: v1.44.0 # pragma: allowlist secret
     hooks:
       - id: typos
 
@@ -69,7 +69,7 @@ repos:
         args: [--baseline, .secrets.baseline]
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.27.2
+    rev: v8.30.0
     hooks:
       - id: gitleaks
         args: [--verbose]
