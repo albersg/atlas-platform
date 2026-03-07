@@ -32,3 +32,28 @@ jobs:
 
       - name: Security task
         run: mise run security
+
+  container-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Build inventory-service image
+        run: docker build -f services/inventory-service/Dockerfile -t local/inventory-service:ci services/inventory-service
+
+      - name: Build web image
+        run: docker build -f apps/web/Dockerfile -t local/web:ci apps/web
+
+      - name: Scan inventory-service image with Trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed local/inventory-service:ci
+
+      - name: Scan web image with Trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed local/web:ci

@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "False-positive allowlist for local development artifacts"
+paths = [
+  '''(^|/)\.secrets\.baseline$''',
+  '''(^|/)docs/'''
+]
