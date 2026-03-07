@@ -20,5 +20,6 @@ resources:
   - networkpolicy-allow-dns-egress.yaml
   - networkpolicy-web.yaml
   - networkpolicy-inventory-service.yaml
+  - networkpolicy-inventory-migration.yaml
   - networkpolicy-postgres.yaml
   - networking/ingress.yaml
