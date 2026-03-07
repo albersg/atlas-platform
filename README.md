@@ -40,6 +40,7 @@ Documentación de referencia:
 - [ADR monorepo vs multirepo](docs/adr/0001-monorepo-vs-multirepo.md)
 - [Blueprint hexagonal + screaming](docs/architecture/hexagonal-screaming-architecture.md)
 - [Topología de despliegue](docs/architecture/deployment-topology.md)
+- [Actualización automática de dependencias](docs/development/DEPENDENCY_UPDATES.md)
 - [Flujo end-to-end de desarrollo](docs/development/END_TO_END_WORKFLOW.md)
 - [Runbook de despliegue k3s](docs/deployment/K3S_DEPLOYMENT_RUNBOOK.md)
 - [Contrato operativo de agentes](AGENTS.md)
