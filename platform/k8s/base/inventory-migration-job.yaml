@@ -11,6 +11,7 @@ spec:
       labels:
         app: inventory-migration
     spec:
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       securityContext:
         seccompProfile:
