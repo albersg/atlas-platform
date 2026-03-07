@@ -1,0 +1,200 @@
+min_version = "2026.3.3"
+
+[tools]
+pre-commit = "4.5.1"
+actionlint = "1.7.11"
+python = "3.12.13"
+uv = "0.10.8"
+node = "25.8.0"
+ruff = "0.15.5"
+shellcheck = "0.11.0"
+shfmt = "3.12.0"
+
+[tasks.doctor]
+description = "Show mise environment diagnostics"
+run = [
+  "mise doctor",
+  "mise tasks validate"
+]
+
+[tasks.bootstrap]
+description = "Install toolchain and git hooks"
+run = [
+  "pre-commit install --install-hooks --hook-type pre-commit --hook-type pre-push"
+]
+
+[tasks.app-bootstrap]
+description = "Install backend and frontend dependencies for local development"
+run = [
+  "cd services/inventory-service && uv sync --extra dev",
+  "cd apps/web && npm install"
+]
+
+[tasks.fmt]
+description = "Apply safe auto-fixes"
+run = [
+  "pre-commit run trailing-whitespace --all-files --hook-stage manual",
+  "pre-commit run end-of-file-fixer --all-files --hook-stage manual",
+  "pre-commit run mixed-line-ending --all-files --hook-stage manual",
+  "pre-commit run shfmt-fix --all-files --hook-stage manual",
+  "pre-commit run ruff-format-fix --all-files --hook-stage manual"
+]
+
+[tasks.fmt-check]
+description = "Verify formatting is already clean"
+run = [
+  "mise run fmt",
+  "git diff --exit-code"
+]
+
+[tasks.lint]
+description = "Run lint and policy checks with bounded retries for auto-fixing hooks"
+run = [
+  "pre-commit validate-config",
+  '''
+max_tries="${MISE_LINT_MAX_TRIES:-3}"
+attempt=1
+while [ "$attempt" -le "$max_tries" ]; do
+  echo "pre-commit lint attempt ${attempt}/${max_tries}"
+  if pre-commit run --all-files --show-diff-on-failure; then
+    exit 0
+  fi
+
+  if [ "$attempt" -eq "$max_tries" ]; then
+    echo "lint failed after ${max_tries} attempts" >&2
+    exit 1
+  fi
+
+  attempt=$((attempt + 1))
+done
+'''
+]
+
+[tasks.security]
+description = "Run focused security checks"
+run = [
+  "pre-commit run detect-private-key --all-files",
+  "pre-commit run detect-secrets --all-files",
+  "pre-commit run check-github-workflows --all-files",
+  "pre-commit run zizmor --all-files --hook-stage manual"
+]
+
+[tasks.test]
+description = "Run repository policy tests"
+run = [
+  "python -m unittest discover -s tests -p 'test_*.py' -v",
+  "uv run --project services/inventory-service --extra dev pytest services/inventory-service/tests/unit"
+]
+
+[tasks.backend-test-cov]
+description = "Run inventory-service tests with coverage"
+run = "uv run --project services/inventory-service --extra dev pytest services/inventory-service/tests"
+
+[tasks.backend-typecheck]
+description = "Run static type checking for inventory-service"
+run = "uv run --project services/inventory-service --extra dev pyright"
+
+[tasks.typecheck]
+description = "Run all repository type checks"
+run = [
+  "mise run backend-typecheck"
+]
+
+[tasks.docs-build]
+description = "Build MkDocs Material site in strict mode"
+run = "uvx --from mkdocs==1.6.1 --with mkdocs-material==9.6.18 mkdocs build --strict"
+
+[tasks.docs-serve]
+description = "Serve docs locally with MkDocs Material"
+run = "uvx --from mkdocs==1.6.1 --with mkdocs-material==9.6.18 mkdocs serve -a 0.0.0.0:8001"
+
+[tasks.backend-dev]
+description = "Run inventory-service locally"
+run = "cd services/inventory-service && uv run uvicorn inventory_service.main:app --reload --host 0.0.0.0 --port 8000"
+
+[tasks.backend-migrate]
+description = "Apply Alembic migrations for inventory-service"
+run = "cd services/inventory-service && uv run alembic upgrade head"
+
+[tasks.backend-test]
+description = "Run inventory-service tests with uv"
+run = "cd services/inventory-service && uv run --extra dev pytest -q"
+
+[tasks.frontend-dev]
+description = "Run web app locally"
+run = "cd apps/web && npm run dev"
+
+[tasks.frontend-build]
+description = "Build web app"
+run = "cd apps/web && npm run build"
+
+[tasks.compose-up]
+description = "Start local stack with Docker Compose"
+run = "docker compose up --build -d"
+
+[tasks.compose-down]
+description = "Stop local stack"
+run = "docker compose down"
+
+[tasks.compose-logs]
+description = "Tail stack logs"
+run = "docker compose logs -f --tail=200"
+
+[tasks.k8s-preflight]
+description = "Validate k3s prerequisites and cluster capabilities"
+run = "./scripts/k3s/preflight.sh"
+
+[tasks.k8s-build-images]
+description = "Build local backend/frontend images for k3s dev overlay"
+run = "./scripts/k3s/build-images.sh"
+
+[tasks.k8s-import-images]
+description = "Import local images into k3s containerd"
+run = "./scripts/k3s/import-images.sh"
+
+[tasks.k8s-deploy-dev]
+description = "Deploy dev overlay to k3s and wait for readiness"
+run = "./scripts/k3s/deploy-dev.sh"
+
+[tasks.k8s-status]
+description = "Show k3s workload, service and ingress status"
+run = "./scripts/k3s/status.sh"
+
+[tasks.k8s-access]
+description = "Print host mapping and access URLs"
+run = "./scripts/k3s/access.sh"
+
+[tasks.k8s-delete-dev]
+description = "Delete dev overlay resources from k3s"
+run = "kubectl delete -k platform/k8s/overlays/dev --ignore-not-found"
+
+[tasks.check]
+description = "Run complete local validation"
+run = [
+  "mise run lint",
+  "mise run typecheck",
+  "mise run test"
+]
+
+[tasks.fix]
+description = "Apply all safe auto-fixes"
+run = "mise run fmt"
+
+[tasks.hooks-update]
+description = "Update pre-commit hook revisions"
+run = [
+  "pre-commit autoupdate"
+]
+
+[tasks.lock]
+description = "Update mise lockfile for reproducible installs"
+run = "mise lock"
+
+[tasks.ci]
+description = "Run CI-equivalent validation path"
+run = [
+  "mise run fmt-check",
+  "mise run check",
+  "mise run docs-build",
+  "mise run security"
+]

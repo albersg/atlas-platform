@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases",
+    ":prHourlyLimit2",
+    ":prConcurrentLimit10"
+  ],
+  "labels": [
+    "dependencies",
+    "renovate"
+  ],
+  "timezone": "Europe/Madrid",
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github-actions"
+    },
+    {
+      "matchManagers": [
+        "pre-commit"
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
+        "pip_requirements",
+        "pep621",
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "automerge": false
+    }
+  ]
+}

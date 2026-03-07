@@ -1,0 +1,10 @@
+# Default ownership
+* @albeerto
+
+# Security and automation
+/.github/ @albeerto
+/SECURITY.md @albeerto
+/AGENTS.md @albeerto
+/mise.toml @albeerto
+/justfile @albeerto
+/.pre-commit-config.yaml @albeerto

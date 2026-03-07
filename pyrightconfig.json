@@ -1,0 +1,23 @@
+{
+  "venvPath": ".",
+  "include": [
+    "services/inventory-service/src",
+    "services/inventory-service/tests"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "services/inventory-service",
+      "extraPaths": [
+        "services/inventory-service/src"
+      ]
+    }
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "reportMissingTypeStubs": false
+}

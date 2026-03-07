@@ -1,0 +1,45 @@
+name: Pre-commit Autoupdate
+
+on:
+  schedule:
+    - cron: "15 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          install: true
+          cache: true
+
+      - name: Update pre-commit hooks
+        run: |
+          pre-commit autoupdate
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        with:
+          commit-message: "chore(pre-commit): autoupdate hooks"
+          title: "chore(pre-commit): autoupdate hooks"
+          body: |
+            Automated pre-commit hook update.
+
+            - Ran `pre-commit autoupdate`
+          branch: chore/pre-commit-autoupdate
+          labels: |
+            dependencies
+            automation

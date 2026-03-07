@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Tool caches
+.mise/
+.pre-commit-cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+**/.venv/
+.coverage
+coverage.xml
+site/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+kubectl
+
+# Node
+node_modules/
+apps/web/dist/

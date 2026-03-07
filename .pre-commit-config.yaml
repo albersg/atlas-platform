@@ -1,0 +1,123 @@
+minimum_pre_commit_version: "4.0.0"
+default_stages: [pre-commit]
+default_install_hook_types: [pre-commit, pre-push]
+fail_fast: false
+exclude: |
+  (?x)^(
+    apps/web/node_modules/|
+    services/inventory-service/\.venv/|
+    \.venv/
+  )
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-yaml
+      - id: detect-private-key
+      - id: destroyed-symlinks
+      - id: forbid-new-submodules
+      - id: no-commit-to-branch
+        args: [--branch, main]
+        stages: [pre-push]
+      - id: trailing-whitespace
+        stages: [manual]
+      - id: end-of-file-fixer
+        stages: [manual]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        stages: [manual]
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.37.0
+    hooks:
+      - id: check-github-workflows
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.11
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.44.0
+    hooks:
+      - id: typos
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.21.0
+    hooks:
+      - id: markdownlint-cli2
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.22.0
+    hooks:
+      - id: zizmor
+        stages: [manual]
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff-check
+        entry: ruff check
+        language: system
+        types_or: [python, pyi]
+
+      - id: ruff-format-check
+        name: ruff-format-check
+        entry: ruff format --check
+        language: system
+        types_or: [python, pyi]
+
+      - id: ruff-format-fix
+        name: ruff-format-fix
+        entry: ruff format
+        language: system
+        types_or: [python, pyi]
+        stages: [manual]
+
+      - id: shfmt-check
+        name: shfmt-check
+        entry: shfmt -d -i 2 -ci
+        language: system
+        files: \.sh$
+
+      - id: shfmt-fix
+        name: shfmt-fix
+        entry: shfmt -w -i 2 -ci
+        language: system
+        files: \.sh$
+        stages: [manual]
+
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        files: \.sh$
+
+      - id: pyright
+        name: pyright
+        entry: uv run --project services/inventory-service --extra dev pyright
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+        stages: [pre-push]

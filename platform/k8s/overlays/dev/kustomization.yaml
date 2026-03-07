@@ -1,0 +1,58 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: atlas-platform
+
+resources:
+  - ../../base
+
+images:
+  - name: ghcr.io/example/atlas-inventory-service
+    newName: atlas-inventory-service
+    newTag: dev
+  - name: ghcr.io/example/atlas-web
+    newName: atlas-web
+    newTag: dev
+
+patches:
+  - target:
+      kind: Deployment
+      name: inventory-service
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: inventory-service
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target:
+      kind: ConfigMap
+      name: inventory-config
+    patch: |-
+      - op: replace
+        path: /data/INVENTORY_APP_ENV
+        value: dev

@@ -1,0 +1,28 @@
+site_name: Atlas Platform
+site_description: Atlas platform developer documentation
+repo_url: https://github.com/example/atlas-platform
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+
+nav:
+  - Overview: index.md
+  - Development:
+      - End-to-end workflow: development/END_TO_END_WORKFLOW.md
+  - ADR:
+      - Monorepo vs Multirepo: adr/0001-monorepo-vs-multirepo.md
+  - Architecture:
+      - Hexagonal + Screaming: architecture/hexagonal-screaming-architecture.md
+      - Deployment topology: architecture/deployment-topology.md
+  - Deployment:
+      - K3S runbook: deployment/K3S_DEPLOYMENT_RUNBOOK.md
+  - Operations:
+      - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
