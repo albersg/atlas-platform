@@ -18,6 +18,13 @@ El runbook cubre:
 
 En `platform/k8s/base` se despliegan:
 
+- `namespace/`: namespace y aislamiento lógico.
+- `config/`: ConfigMaps y Secrets.
+- `data/`: almacenamiento persistente.
+- `workloads/`: Deployments y Jobs.
+- `networking/`: Services e Ingress.
+- `resilience/`: HPA y PDB.
+
 - `Namespace`: `atlas-platform`.
 - `Secret` de PostgreSQL: `postgres-secret`.
 - `Secret` de backend: `inventory-secrets`.
