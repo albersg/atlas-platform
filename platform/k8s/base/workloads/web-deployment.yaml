@@ -18,6 +18,7 @@ spec:
       labels:
         app: web
     spec:
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext:
         seccompProfile:
