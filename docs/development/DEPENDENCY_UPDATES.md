@@ -7,6 +7,7 @@ This repository uses Dependabot for automated dependency updates.
 - GitHub Actions dependencies (`.github/workflows/*`)
 - Python dependencies for `services/inventory-service`
 - npm dependencies for `apps/web`
+- Docker base image updates for `apps/web` and `services/inventory-service`
 
 Dependabot configuration lives in `/.github/dependabot.yml`.
 
