@@ -3,8 +3,6 @@ kind: Kustomization
 
 resources:
   - namespace/namespace.yaml
-  - config/postgres-secret.yaml
-  - config/inventory-secrets.yaml
   - config/inventory-config.yaml
   - data/postgres-pvc.yaml
   - workloads/postgres-deployment.yaml

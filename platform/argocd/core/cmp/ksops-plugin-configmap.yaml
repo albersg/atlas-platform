@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ksops-cmp-plugin
+  namespace: argocd
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: ksops-kustomize
+    spec:
+      allowConcurrency: true
+      discover:
+        fileName: ksops-generator.yaml
+      generate:
+        command:
+          - sh
+          - -c
+          - /custom-tools/bin/kustomize build --enable-alpha-plugins --enable-exec .

@@ -8,6 +8,7 @@ Welcome to the Atlas Platform documentation portal.
 - Architecture blueprints in `docs/architecture/`.
 - End-to-end developer workflow in `docs/development/`.
 - Deployment runbook in `docs/deployment/`.
+- GitOps runbook for Argo CD + SOPS in `docs/deployment/gitops/`.
 
 ## Standard validation path
 

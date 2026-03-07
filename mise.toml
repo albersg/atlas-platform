@@ -143,31 +143,59 @@ run = "docker compose logs -f --tail=200"
 
 [tasks.k8s-preflight]
 description = "Validate k3s prerequisites and cluster capabilities"
-run = "./scripts/k3s/preflight.sh"
+run = "./scripts/k3s/cluster/preflight.sh"
 
 [tasks.k8s-build-images]
 description = "Build local backend/frontend images for k3s dev overlay"
-run = "./scripts/k3s/build-images.sh"
+run = "./scripts/k3s/images/build.sh"
 
 [tasks.k8s-import-images]
 description = "Import local images into k3s containerd"
-run = "./scripts/k3s/import-images.sh"
+run = "./scripts/k3s/images/import.sh"
 
 [tasks.k8s-deploy-dev]
 description = "Deploy dev overlay to k3s and wait for readiness"
-run = "./scripts/k3s/deploy-dev.sh"
+run = "./scripts/k3s/deploy/dev.sh"
 
 [tasks.k8s-status]
 description = "Show k3s workload, service and ingress status"
-run = "./scripts/k3s/status.sh"
+run = "./scripts/k3s/cluster/status.sh"
 
 [tasks.k8s-access]
 description = "Print host mapping and access URLs"
-run = "./scripts/k3s/access.sh"
+run = "./scripts/k3s/cluster/access.sh"
 
 [tasks.k8s-delete-dev]
 description = "Delete dev overlay resources from k3s"
 run = "kubectl delete -k platform/k8s/overlays/dev --ignore-not-found"
+
+[tasks.gitops-install-tools]
+description = "Install local Argo CD, SOPS, age, and kustomize helper binaries"
+run = "./scripts/gitops/bootstrap/install-tools.sh"
+
+[tasks.gitops-bootstrap-core]
+description = "Install Argo CD core and KSOPS plugin into the current cluster"
+run = "./scripts/gitops/bootstrap/install-argocd.sh"
+
+[tasks.gitops-install-age-key]
+description = "Create or install the local SOPS age key into the argocd namespace"
+run = "./scripts/gitops/bootstrap/install-age-key-secret.sh"
+
+[tasks.gitops-install-repo-credential]
+description = "Install the Argo CD repository credential from the local deploy key"
+run = "./scripts/gitops/bootstrap/install-repo-credential.sh"
+
+[tasks.gitops-apply-apps]
+description = "Apply Argo CD applications for dev and prod overlays"
+run = "./scripts/gitops/bootstrap/apply-apps.sh"
+
+[tasks.gitops-render-dev]
+description = "Render the encrypted dev overlay locally via KSOPS"
+run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/dev"
+
+[tasks.gitops-render-prod]
+description = "Render the encrypted prod overlay locally via KSOPS"
+run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/prod"
 
 [tasks.check]
 description = "Run complete local validation"

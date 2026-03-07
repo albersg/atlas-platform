@@ -6,6 +6,9 @@ namespace: atlas-platform
 resources:
   - ../../base
 
+generators:
+  - ksops-generator.yaml
+
 patches:
   - target:
       kind: ConfigMap

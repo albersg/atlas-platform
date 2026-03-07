@@ -67,6 +67,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
+        exclude: ^platform/k8s/overlays/.*/secrets/.*\.enc\.yaml$
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0

@@ -4,7 +4,7 @@ set -euo pipefail
 NAMESPACE="atlas-platform"
 OVERLAY="platform/k8s/overlays/dev"
 
-"$(dirname "$0")/preflight.sh"
+"$(dirname "$0")/../cluster/preflight.sh"
 
 echo "Eliminando job de migracion previo (si existe)..."
 kubectl -n "${NAMESPACE}" delete job inventory-migration --ignore-not-found

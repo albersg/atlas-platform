@@ -4,8 +4,9 @@ check-filename = true
 [files]
 extend-exclude = [
   "README.md",
-  "docs/deployment/K3S_DEPLOYMENT_RUNBOOK.md",
-  "scripts/k3s/*.sh",
+  "docs/deployment/k3s/RUNBOOK.md",
+  "platform/k8s/overlays/**/secrets/*.enc.yaml",
+  "scripts/k3s/**/*.sh",
 ]
 
 [default.extend-words]

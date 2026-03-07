@@ -13,6 +13,7 @@ __pycache__/
 .coverage
 coverage.xml
 site/
+.gitops-local/
 
 # OS/editor
 .DS_Store

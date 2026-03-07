@@ -6,6 +6,9 @@ namespace: atlas-platform
 resources:
   - ../../base
 
+generators:
+  - ksops-generator.yaml
+
 images:
   - name: ghcr.io/example/atlas-inventory-service
     newName: atlas-inventory-service
