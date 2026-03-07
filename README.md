@@ -22,7 +22,7 @@ Este repositorio está diseñado para:
 - Calidad y testing: `ruff`, `pyright`, `pytest`, `pytest-cov`.
 - Observabilidad de errores: `sentry-sdk` (opcional vía DSN).
 - Documentación: `mkdocs-material`.
-- Dependency management remoto: `Renovate`.
+- Dependency management remoto: `Dependabot`.
 - Developer platform: `mise`, `pre-commit`.
 - CI remoto: GitHub Actions.
 
@@ -299,7 +299,8 @@ Guardrails activos:
 - `actionlint` + `check-github-workflows`,
 - `ruff` para Python,
 - `yamllint`, `markdownlint`, `typos`,
-- workflow de seguridad dedicado en `.github/workflows/security.yml`.
+- workflow de seguridad dedicado en `.github/workflows/security.yml`,
+- Dependabot para actualizaciones de dependencias (`.github/dependabot.yml`).
 
 Documentos de gobierno:
 
