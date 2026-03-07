@@ -59,6 +59,7 @@ class RepoPolicyTests(unittest.TestCase):
             "check-yaml",
             "detect-private-key",
             "detect-secrets",
+            "gitleaks",
             "check-github-workflows",
             "actionlint",
             "ruff-check",

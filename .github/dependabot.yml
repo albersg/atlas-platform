@@ -14,6 +14,8 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "pip"
     directory: "/services/inventory-service"
@@ -29,6 +31,8 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    cooldown:
+      default-days: 7
     groups:
       python-patch-minor:
         update-types:
@@ -49,6 +53,8 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    cooldown:
+      default-days: 7
     groups:
       frontend-patch-minor:
         update-types:

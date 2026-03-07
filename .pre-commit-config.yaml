@@ -68,6 +68,12 @@ repos:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
 
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.2
+    hooks:
+      - id: gitleaks
+        args: [--verbose]
+
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
     rev: v1.22.0
     hooks:

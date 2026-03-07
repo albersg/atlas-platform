@@ -23,6 +23,9 @@ Este repositorio está diseñado para:
 - Observabilidad de errores: `sentry-sdk` (opcional vía DSN).
 - Documentación: `mkdocs-material`.
 - Dependency management remoto: `Dependabot`.
+- Escaneo de credenciales expuestas: `gitleaks` + `detect-secrets`.
+- Escaneo de contenedores: `Trivy` en pipeline de seguridad.
+- SAST remoto: `CodeQL` (ejecución automática en repos públicos).
 - Developer platform: `mise`, `pre-commit`.
 - CI remoto: GitHub Actions.
 
@@ -300,6 +303,9 @@ Guardrails activos:
 - `ruff` para Python,
 - `yamllint`, `markdownlint`, `typos`,
 - workflow de seguridad dedicado en `.github/workflows/security.yml`,
+- `gitleaks` en `pre-commit` y en el task `mise run security`,
+- Trivy para escaneo de imágenes de `inventory-service` y `web`,
+- CodeQL para análisis estático en entornos compatibles,
 - Dependabot para actualizaciones de dependencias (`.github/dependabot.yml`).
 
 Documentos de gobierno:

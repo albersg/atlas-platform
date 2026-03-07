@@ -75,6 +75,7 @@ description = "Run focused security checks"
 run = [
   "pre-commit run detect-private-key --all-files",
   "pre-commit run detect-secrets --all-files",
+  "pre-commit run gitleaks --all-files",
   "pre-commit run check-github-workflows --all-files",
   "pre-commit run zizmor --all-files --hook-stage manual"
 ]
