@@ -8,19 +8,13 @@ spec:
   sourceRepos:
     - git@github.com:albersg/agent-first-codex.git
   destinations:
-    - namespace: atlas-platform
+    - namespace: atlas-platform-dev
+      server: https://kubernetes.default.svc
+    - namespace: atlas-platform-prod
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
-    - group: "networking.k8s.io"
-      kind: Ingress
-    - group: "networking.k8s.io"
-      kind: NetworkPolicy
-    - group: "policy"
-      kind: PodDisruptionBudget
-    - group: "autoscaling"
-      kind: HorizontalPodAutoscaler
   namespaceResourceWhitelist:
     - group: ""
       kind: ConfigMap
@@ -34,3 +28,11 @@ spec:
       kind: Deployment
     - group: batch
       kind: Job
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler

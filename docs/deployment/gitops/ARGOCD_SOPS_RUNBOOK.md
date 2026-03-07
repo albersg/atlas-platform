@@ -83,7 +83,11 @@ For local branch testing before merge, point the Applications at a pushed branch
 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-apply-apps
 ```
 
-At that point Argo CD can sync the encrypted `dev` and `prod` overlays.
+At that point Argo CD can sync the encrypted `dev` and `prod` overlays into their
+dedicated namespaces:
+
+- `atlas-platform-dev`
+- `atlas-platform-prod`
 
 ## Local render validation
 

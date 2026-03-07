@@ -18,14 +18,15 @@ El runbook cubre:
 
 En `platform/k8s/base` se despliegan:
 
-- `namespace/`: namespace y aislamiento lógico.
+- recursos namespaced comunes reutilizados por `dev` y `prod`.
 - `config/`: ConfigMaps y Secrets.
 - `data/`: almacenamiento persistente.
 - `workloads/`: Deployments y Jobs.
 - `networking/`: Services e Ingress.
 - `resilience/`: HPA y PDB.
 
-- `Namespace`: `atlas-platform`.
+- `Namespace` dev: `atlas-platform-dev`.
+- `Namespace` prod: `atlas-platform-prod`.
 - `Secret` de PostgreSQL: `postgres-secret`.
 - `Secret` de backend: `inventory-secrets`.
 - `ConfigMap` de backend: `inventory-config`.
@@ -152,8 +153,8 @@ Entradas típicas:
 Si Ingress no está disponible:
 
 ```bash
-kubectl -n atlas-platform port-forward svc/web 8080:80
-kubectl -n atlas-platform port-forward svc/inventory-service 8000:8000
+kubectl -n atlas-platform-dev port-forward svc/web 8080:80
+kubectl -n atlas-platform-dev port-forward svc/inventory-service 8000:8000
 ```
 
 Accesos fallback:
@@ -179,24 +180,24 @@ Accesos fallback:
 
 ```bash
 mise run k8s-status
-kubectl -n atlas-platform get events --sort-by=.lastTimestamp
+kubectl -n atlas-platform-dev get events --sort-by=.lastTimestamp
 ```
 
 ## 7.2 Logs
 
 ```bash
-kubectl -n atlas-platform logs deploy/inventory-service --tail=200 -f
-kubectl -n atlas-platform logs deploy/web --tail=200 -f
-kubectl -n atlas-platform logs deploy/postgres --tail=200 -f
-kubectl -n atlas-platform logs job/inventory-migration --tail=200
+kubectl -n atlas-platform-dev logs deploy/inventory-service --tail=200 -f
+kubectl -n atlas-platform-dev logs deploy/web --tail=200 -f
+kubectl -n atlas-platform-dev logs deploy/postgres --tail=200 -f
+kubectl -n atlas-platform-dev logs job/inventory-migration --tail=200
 ```
 
 ## 7.3 Re-ejecutar migraciones
 
 ```bash
-kubectl -n atlas-platform delete job inventory-migration --ignore-not-found
+kubectl -n atlas-platform-dev delete job inventory-migration --ignore-not-found
 kubectl apply -k platform/k8s/overlays/dev
-kubectl -n atlas-platform wait --for=condition=complete job/inventory-migration --timeout=300s
+kubectl -n atlas-platform-dev wait --for=condition=complete job/inventory-migration --timeout=300s
 ```
 
 ## 7.4 Eliminar entorno dev
@@ -249,7 +250,7 @@ Antes de producción:
 
 ## 10.2 Job de migración no completa
 
-- `kubectl -n atlas-platform logs job/inventory-migration`
+- `kubectl -n atlas-platform-dev logs job/inventory-migration`
 - comprobar credenciales y conectividad a `postgres:5432`.
 
 ## 10.3 Ingress sin respuesta

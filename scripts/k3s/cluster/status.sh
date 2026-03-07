@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NAMESPACE="atlas-platform"
+NAMESPACE="atlas-platform-dev"
 
 echo "== Workloads =="
 kubectl -n "${NAMESPACE}" get deploy,po,job,pvc,hpa

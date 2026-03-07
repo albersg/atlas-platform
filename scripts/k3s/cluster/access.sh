@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NAMESPACE="atlas-platform"
+NAMESPACE="atlas-platform-dev"
 NODE_IP="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')"
 
 echo "Node IP detectada: ${NODE_IP}"

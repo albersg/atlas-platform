@@ -13,9 +13,14 @@ spec:
       name: ksops-kustomize
   destination:
     server: https://kubernetes.default.svc
-    namespace: atlas-platform
+    namespace: atlas-platform-prod
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - ApplyOutOfSyncOnly=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
