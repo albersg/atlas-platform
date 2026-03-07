@@ -19,6 +19,7 @@ spec:
       labels:
         app: inventory-service
     spec:
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext:
         seccompProfile:

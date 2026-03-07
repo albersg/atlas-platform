@@ -31,8 +31,9 @@ En `platform/k8s/base` se despliegan:
 - `Deployment` frontend: `web`.
 - `Service` frontend: `web`.
 - `Ingress`: `atlas-ingress`.
-- `PDB`: `inventory-service-pdb`, `web-pdb`.
+- `PDB`: `inventory-service-pdb`, `web-pdb`, `postgres-pdb`.
 - `HPA`: `inventory-service`, `web`.
+- `NetworkPolicy`: deny-by-default con reglas explícitas para DNS, web, API y PostgreSQL.
 
 Overlays:
 
@@ -163,8 +164,11 @@ Accesos fallback:
 - Probes (`startup`, `readiness`, `liveness`) en backend y frontend.
 - Requests/limits en backend, frontend, job y PostgreSQL.
 - `allowPrivilegeEscalation: false` y `capabilities.drop: [ALL]` en workloads de app.
-- PDB para backend/frontend.
+- `seccompProfile: RuntimeDefault` en workloads de app y PostgreSQL.
+- `automountServiceAccountToken: false` en deployments y job.
+- PDB para backend/frontend/PostgreSQL.
 - HPA para backend/frontend.
+- NetworkPolicies para reducir tráfico lateral y permitir solo flujos necesarios.
 
 ## 7. Operación diaria
 
@@ -255,6 +259,12 @@ Antes de producción:
 
 - comprobar `metrics-server` en `kube-system`,
 - comprobar requests CPU definidos en deployments.
+
+## 10.5 Tráfico bloqueado entre pods
+
+- revisar NetworkPolicies activas: `kubectl -n atlas-platform get networkpolicy`,
+- validar reglas DNS/CoreDNS (`kube-system`, `k8s-app=kube-dns`),
+- confirmar que backend puede llegar a `postgres:5432`.
 
 ## 11. Comandos de referencia
 
