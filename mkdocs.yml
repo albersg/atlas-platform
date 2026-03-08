@@ -24,6 +24,8 @@ nav:
       - Hexagonal + Screaming: architecture/hexagonal-screaming-architecture.md
       - Deployment topology: architecture/deployment-topology.md
   - Deployment:
-      - K3S runbook: deployment/K3S_DEPLOYMENT_RUNBOOK.md
+      - Deployment docs overview: deployment/README.md
+      - Argo CD + SOPS runbook: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
+      - K3S runbook: deployment/k3s/RUNBOOK.md
   - Operations:
       - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md

@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: platform/k8s/overlays/.*/secrets/.*\.enc\.ya?ml$
+    age: age18p2u2yekx32mhdaea8cpxhvzzld4awa58auh9tdh8wat46pwge2sldmk9k

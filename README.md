@@ -42,7 +42,8 @@ Documentación de referencia:
 - [Topología de despliegue](docs/architecture/deployment-topology.md)
 - [Actualización automática de dependencias](docs/development/DEPENDENCY_UPDATES.md)
 - [Flujo end-to-end de desarrollo](docs/development/END_TO_END_WORKFLOW.md)
-- [Runbook de despliegue k3s](docs/deployment/K3S_DEPLOYMENT_RUNBOOK.md)
+- [Runbook GitOps con Argo CD + SOPS](docs/deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)
+- [Runbook de despliegue k3s](docs/deployment/k3s/RUNBOOK.md)
 - [Contrato operativo de agentes](AGENTS.md)
 
 ## Estructura del repositorio

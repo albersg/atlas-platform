@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: atlas-platform
+  namespace: argocd
+spec:
+  description: Atlas platform applications managed through Argo CD and SOPS.
+  sourceRepos:
+    - git@github.com:albersg/agent-first-codex.git
+  destinations:
+    - namespace: atlas-platform-dev
+      server: https://kubernetes.default.svc
+    - namespace: atlas-platform-prod
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: apps
+      kind: Deployment
+    - group: batch
+      kind: Job
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler

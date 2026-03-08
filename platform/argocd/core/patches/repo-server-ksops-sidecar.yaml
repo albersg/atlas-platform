@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: install-ksops-tools
+          image: public.ecr.aws/docker/library/alpine:3.21
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              apk add --no-cache curl tar
+              mkdir -p /custom-tools/bin /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops
+              curl -fsSL https://github.com/viaduct-ai/kustomize-sops/releases/download/v4.4.0/ksops_4.4.0_Linux_x86_64.tar.gz | tar --no-same-owner -xz -C /custom-tools/bin
+              curl -fsSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar --no-same-owner -xz -C /custom-tools/bin
+              chmod +x /custom-tools/bin/ksops /custom-tools/bin/kustomize
+              ln -sf /custom-tools/bin/ksops /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops/ksops
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: custom-tools
+              mountPath: /custom-tools
+      containers:
+        - name: ksops
+          image: quay.io/argoproj/argocd:v2.13.3
+          imagePullPolicy: IfNotPresent
+          command:
+            - /var/run/argocd/argocd-cmp-server
+          env:
+            - name: PATH
+              value: /custom-tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - name: XDG_CONFIG_HOME
+              value: /custom-tools
+            - name: SOPS_AGE_KEY_FILE
+              value: /sops-age/keys.txt
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: var-files
+              mountPath: /var/run/argocd
+            - name: plugins
+              mountPath: /home/argocd/cmp-server/plugins
+            - name: cmp-plugin
+              mountPath: /home/argocd/cmp-server/config/plugin.yaml
+              subPath: plugin.yaml
+            - name: cmp-tmp
+              mountPath: /tmp
+            - name: custom-tools
+              mountPath: /custom-tools
+            - name: sops-age-key
+              mountPath: /sops-age
+              readOnly: true
+      volumes:
+        - name: cmp-plugin
+          configMap:
+            name: ksops-cmp-plugin
+        - name: cmp-tmp
+          emptyDir: {}
+        - name: custom-tools
+          emptyDir: {}
+        - name: sops-age-key
+          secret:
+            secretName: argocd-sops-age-key # pragma: allowlist secret
+            optional: true

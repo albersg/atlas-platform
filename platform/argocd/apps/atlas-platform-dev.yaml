@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: atlas-platform-dev
+  namespace: argocd
+spec:
+  project: atlas-platform
+  source:
+    repoURL: git@github.com:albersg/agent-first-codex.git
+    targetRevision: main
+    path: platform/k8s/overlays/dev
+    plugin:
+      name: ksops-kustomize
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: atlas-platform-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

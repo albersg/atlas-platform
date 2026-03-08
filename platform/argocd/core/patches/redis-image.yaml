@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-redis
+  namespace: argocd
+spec:
+  template:
+    spec:
+      containers:
+        - name: redis
+          image: public.ecr.aws/docker/library/redis:7.2-alpine
+          imagePullPolicy: IfNotPresent
