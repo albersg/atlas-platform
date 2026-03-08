@@ -89,7 +89,12 @@ trap cleanup EXIT
 
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/inventory-service --timeout=120s >/dev/null
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/web --timeout=120s >/dev/null
-kubectl -n "$NAMESPACE" wait --for=condition=complete job/inventory-migration --timeout=120s >/dev/null
+
+if kubectl -n "$NAMESPACE" get job inventory-migration >/dev/null 2>&1; then
+  kubectl -n "$NAMESPACE" wait --for=condition=complete job/inventory-migration --timeout=120s >/dev/null
+else
+  echo "Migration job ${ENVIRONMENT}: no presente (hook ya limpiado o despliegue sin job persistente)"
+fi
 
 NODE_IP="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')"
 
