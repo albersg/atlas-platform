@@ -1,7 +1,7 @@
 name: Release Images
 
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers] gated to successful CI runs on main only
     workflows: [CI]
     types: [completed]
     branches: [main]
@@ -41,7 +41,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          printf '%s' "$GH_TOKEN" | docker login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
+          printf '%s' "$GH_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Enable buildx
         run: |
