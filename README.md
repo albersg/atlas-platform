@@ -1,53 +1,97 @@
-# Atlas Platform Monorepo
+# Atlas Platform
 
-Plantilla de plataforma "agent-first" para desarrollo y preproducción, con backend, frontend, base de datos, CI/CD y guardrails DevSecOps para trabajar de forma consistente y escalable.
+[![CI](https://github.com/albersg/atlas-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/albersg/atlas-platform/actions/workflows/ci.yml)
+[![Security](https://github.com/albersg/atlas-platform/actions/workflows/security.yml/badge.svg)](https://github.com/albersg/atlas-platform/actions/workflows/security.yml)
+[![CodeQL](https://github.com/albersg/atlas-platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/albersg/atlas-platform/actions/workflows/codeql.yml)
+[![Release Images](https://github.com/albersg/atlas-platform/actions/workflows/release-images.yml/badge.svg)](https://github.com/albersg/atlas-platform/actions/workflows/release-images.yml)
 
-## Objetivo del repositorio
+Atlas Platform es un monorepo "agent-first" para desarrollo y preproduccion que unifica backend, frontend, base de datos, CI/CD, Kubernetes local y guardrails DevSecOps bajo una interfaz operativa comun basada en `mise run`.
 
-Este repositorio está diseñado para:
+## Qué aporta este repositorio
 
-- acelerar desarrollo con comandos canónicos estables (`mise run`),
-- unificar tooling y versiones (`mise`),
-- forzar calidad y seguridad en local y CI (`pre-commit` + GitHub Actions),
-- mantener arquitectura preparada para crecer a microservicios (hexagonal + screaming),
-- permitir que agentes y humanos trabajen con el mismo flujo operativo.
+- Unifica tooling, versiones y tareas canónicas con `mise`.
+- Hace que humanos y agentes trabajen con el mismo flujo operativo.
+- Mantiene calidad y seguridad consistentes en local y en GitHub Actions.
+- Conserva una base arquitectónica preparada para crecer a más bounded contexts.
+- Se centra en `dev` y `staging`; `prod` queda fuera del alcance operativo actual.
 
-## Stack tecnológico
+## Stack y automatización
 
-- Backend: Python 3.12 + FastAPI + SQLAlchemy + Alembic (`services/inventory-service`).
-- Frontend: React + Vite + TypeScript (`apps/web`).
-- Base de datos: PostgreSQL.
-- Orquestación local: Docker Compose.
-- Orquestación cluster: Kubernetes/k3s con Kustomize + Argo CD (`platform/k8s`, `platform/argocd`).
-- Calidad y testing: `ruff`, `pyright`, `pytest`, `pytest-cov`.
-- Observabilidad de errores: `sentry-sdk` (opcional vía DSN).
-- Documentación: `mkdocs-material`.
-- Dependency management remoto: `Dependabot`.
-- Escaneo de credenciales expuestas: `gitleaks` + `detect-secrets`.
-- Escaneo y promoción de contenedores: `Trivy` + GHCR + Cosign en pipelines de release.
-- SAST remoto: `CodeQL` (ejecución automática en repos públicos).
-- Developer platform: `mise`, `pre-commit`.
-- CI remoto: GitHub Actions.
+- Aplicación: Python 3.12, FastAPI, SQLAlchemy, Alembic, React, Vite, TypeScript y PostgreSQL.
+- Plataforma: Docker Compose para el loop local, k3s + Kustomize para `dev`, Argo CD + SOPS/KSOPS + GHCR para `staging`.
+- Calidad: `ruff`, `pyright`, `pytest`, `pytest-cov` y MkDocs Material.
+- Seguridad y automatización: `pre-commit`, `gitleaks`, `detect-secrets`, Trivy, CodeQL, Dependabot, GitHub Actions y Cosign para la cadena de release.
 
-## Principios de arquitectura
+## Alcance actual
+
+| Superficie | Objetivo | Modelo operativo |
+| --- | --- | --- |
+| Local | Loop rápido de desarrollo | Docker Compose o procesos locales |
+| `dev` | Laboratorio no productivo en cluster local | k3s + imágenes locales + `kubectl apply` |
+| `staging` | Validación preproductiva | Argo CD + SOPS + imágenes de registry por digest |
+
+`prod` no forma parte del alcance actual del repositorio. Cuando exista una necesidad real de producción, se introducirá con infraestructura separada.
+
+## Vista rápida de la plataforma
+
+```mermaid
+flowchart LR
+  A[Desarrollo local\nbackend, frontend o Compose] --> B[dev\nk3s + imágenes locales]
+  C[Merge en main] --> D[GHCR\nbuild, scan, sign y publish]
+  D --> E[staging\nArgo CD + SOPS + digests]
+```
+
+## Quickstart
+
+Este repositorio asume que las herramientas base ya están instaladas en tu máquina. A partir de ahí:
+
+```bash
+mise install
+mise run bootstrap
+mise run app-bootstrap
+mise run check
+```
+
+Con esto obtienes:
+
+- toolchain fijado por versión,
+- hooks de git (`pre-commit` y `pre-push`),
+- dependencias de backend y frontend,
+- validación local básica del repositorio.
+
+Primeros loops útiles:
+
+```bash
+mise run compose-up
+mise run backend-dev
+mise run frontend-dev
+mise run docs-build
+```
+
+Guía completa de arranque: [Quickstart](docs/getting-started/quickstart.md)
+
+## Flujos principales
+
+| Si quieres... | Consulta |
+| --- | --- |
+| Preparar el entorno por primera vez | [Quickstart](docs/getting-started/quickstart.md) |
+| Entender el mapa del repo | [Mapa del repositorio](docs/getting-started/repository-map.md) |
+| Trabajar en el loop local diario | [Desarrollo local](docs/development/local-development.md) |
+| Desarrollar backend y migraciones | [Desarrollo backend](docs/development/backend-development.md) |
+| Trabajar en frontend | [Desarrollo frontend](docs/development/frontend-development.md) |
+| Seguir el flujo completo de entrega | [Flujo end-to-end](docs/development/END_TO_END_WORKFLOW.md) |
+| Ejecutar calidad, seguridad y CI local | [Calidad y CI](docs/development/quality-and-ci.md) |
+| Operar `dev` y `staging` | [Panorama operativo](docs/operations/overview.md) |
+| Consultar los runbooks de despliegue | [Runbook k3s](docs/deployment/k3s/RUNBOOK.md) y [Runbook GitOps](docs/deployment/gitops/ARGOCD_SOPS_RUNBOOK.md) |
+| Entender promoción de imágenes | [Image promotion](docs/deployment/releases/IMAGE_PROMOTION.md) |
+
+## Arquitectura y layout del repo
+
+Principios principales:
 
 - Arquitectura hexagonal dentro de cada servicio.
-- Screaming architecture por capacidad de negocio (`inventory`, `billing`) antes que por framework.
-- Monorepo modular con decisión arquitectónica explícita para futura extracción.
-
-Documentación de referencia:
-
-- [ADR monorepo vs multirepo](docs/adr/0001-monorepo-vs-multirepo.md)
-- [Blueprint hexagonal + screaming](docs/architecture/hexagonal-screaming-architecture.md)
-- [Topología de despliegue](docs/architecture/deployment-topology.md)
-- [Actualización automática de dependencias](docs/development/DEPENDENCY_UPDATES.md)
-- [Flujo end-to-end de desarrollo](docs/development/END_TO_END_WORKFLOW.md)
-- [Runbook GitOps con Argo CD + KSOPS + SOPS](docs/deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)
-- [Promoción de imágenes por digest](docs/deployment/releases/IMAGE_PROMOTION.md)
-- [Runbook de despliegue k3s](docs/deployment/k3s/RUNBOOK.md)
-- [Contrato operativo de agentes](AGENTS.md)
-
-## Estructura del repositorio
+- Screaming architecture por capacidad de negocio antes que por framework.
+- Monorepo modular con ADR explícito para decidir cuando extraer más servicios.
 
 ```text
 .
@@ -55,255 +99,31 @@ Documentación de referencia:
 │   └── web/                      # Frontend React/Vite
 ├── services/
 │   ├── inventory-service/        # Backend funcional (FastAPI + Alembic)
-│   └── billing-service/          # Scaffold para siguiente bounded context
+│   └── billing-service/          # Scaffold para futuro bounded context
 ├── platform/
-│   ├── argocd/                   # Argo CD core + bundles por entorno
+│   ├── argocd/                   # Argo CD core + apps GitOps
 │   ├── k8s/                      # Base, componentes reutilizables y overlays
 │   └── policy/                   # Policy-as-code para dev/staging
 ├── scripts/
-│   ├── gitops/                   # Bootstrap, render y validación GitOps
-│   ├── k3s/                      # Scripts operativos para despliegue en k3s
-│   └── release/                  # Helpers de promoción por digest
-├── docs/
-│   ├── adr/
-│   ├── architecture/
-│   └── deployment/
-├── tests/                        # Tests de política del repositorio
+│   ├── gitops/                   # Bootstrap, render y validacion GitOps
+│   ├── k3s/                      # Scripts operativos de k3s
+│   └── release/                  # Helpers de promocion por digest
+├── docs/                         # Base de conocimiento del proyecto
+├── tests/                        # Tests de politica del repositorio
 ├── mise.toml                     # Fuente de verdad de tools + tasks
-└── .pre-commit-config.yaml       # Hooks de calidad/seguridad
+└── .pre-commit-config.yaml       # Hooks de calidad y seguridad
 ```
 
-## Flujo 1: preparación inicial
+Documentación de arquitectura:
 
-Este repositorio asume que instalas tú las herramientas base en tu máquina. Una vez instaladas:
+- [Resumen de arquitectura](docs/architecture/overview.md)
+- [ADR monorepo vs multirepo](docs/adr/0001-monorepo-vs-multirepo.md)
+- [Hexagonal + screaming architecture](docs/architecture/hexagonal-screaming-architecture.md)
+- [Topología de despliegue](docs/architecture/deployment-topology.md)
 
-```bash
-mise install
-mise run bootstrap
-```
+## Calidad, seguridad y CI/CD
 
-Qué hace:
-
-- instala/activa herramientas definidas en `mise.toml`,
-- instala hooks de git (`pre-commit` y `pre-push`).
-
-Después instala dependencias de aplicación:
-
-```bash
-mise run app-bootstrap
-```
-
-Qué hace:
-
-- backend: `uv sync --extra dev` en `services/inventory-service`,
-- frontend: `npm install` en `apps/web`.
-
-## Flujo 2: desarrollo local de extremo a extremo
-
-Levantar stack completo:
-
-```bash
-mise run compose-up
-```
-
-Endpoints locales:
-
-- Web: `http://localhost:8080`
-- API docs: `http://localhost:8000/docs`
-- API liveness: `http://localhost:8000/healthz`
-- API readiness: `http://localhost:8000/readyz`
-
-Ver logs:
-
-```bash
-mise run compose-logs
-```
-
-Parar stack:
-
-```bash
-mise run compose-down
-```
-
-## Flujo 3: desarrollo backend
-
-Arranque en modo desarrollo:
-
-```bash
-mise run backend-dev
-```
-
-Tests del servicio:
-
-```bash
-mise run backend-test
-```
-
-Endpoints actuales de `inventory-service`:
-
-- `GET /healthz`
-- `GET /readyz`
-- `GET /api/v1/inventory/products`
-- `POST /api/v1/inventory/products`
-- `GET /api/v1/inventory/products/{product_id}`
-
-## Flujo 4: migraciones con Alembic
-
-Alembic está integrado y es el mecanismo oficial para cambios de esquema.
-
-Ruta de migraciones:
-
-- `services/inventory-service/alembic/versions/`
-
-Primera revisión creada:
-
-- `services/inventory-service/alembic/versions/20260306_0001_create_products_table.py`
-
-Aplicar migraciones:
-
-```bash
-mise run backend-migrate
-```
-
-Crear una nueva revisión manualmente:
-
-```bash
-cd services/inventory-service
-uv run --extra dev alembic revision -m "describe-tu-cambio"
-```
-
-Comprobar SQL generado sin ejecutar (útil para revisión):
-
-```bash
-cd services/inventory-service
-uv run --extra dev alembic upgrade head --sql
-```
-
-Regla recomendada:
-
-- todo cambio en modelos persistentes debe ir acompañado de migración Alembic explícita.
-
-## Flujo 5: desarrollo frontend
-
-Servidor de desarrollo:
-
-```bash
-mise run frontend-dev
-```
-
-Build de producción:
-
-```bash
-mise run frontend-build
-```
-
-## Observabilidad (Sentry)
-
-Backend (`inventory-service`) usa Sentry si se define:
-
-- `INVENTORY_SENTRY_DSN`
-- `INVENTORY_SENTRY_TRACES_SAMPLE_RATE` (ejemplo `0.1`)
-
-Frontend (`apps/web`) usa Sentry si se define:
-
-- `VITE_SENTRY_DSN`
-- `VITE_SENTRY_ENVIRONMENT` (opcional)
-- `VITE_SENTRY_TRACES_SAMPLE_RATE` (ejemplo `0.1`)
-
-## Flujo 6: despliegue en k3s y GitOps
-
-Matriz operativa actual:
-
-- `dev`: laboratorio local, imágenes locales + `kubectl apply`, namespace `atlas-platform-dev`.
-- `staging`: registry + Argo CD, promoción por digest y namespace `atlas-platform-staging`.
-
-Comprobación de prerequisitos del cluster:
-
-```bash
-mise run k8s-preflight
-```
-
-Construcción de imágenes locales para `dev`:
-
-```bash
-mise run k8s-build-images
-```
-
-Este paso genera tags locales únicos por build y guarda el estado activo en
-`.gitops-local/k3s/dev-images.env` para que `import` y `deploy` usen exactamente
-las mismas imágenes.
-
-Importación de imágenes al runtime de k3s para `dev`:
-
-```bash
-mise run k8s-import-images
-```
-
-Despliegue local completo de `dev`:
-
-```bash
-mise run k8s-deploy-dev
-```
-
-Despliegue de `staging` vía Argo CD sobre una revisión ya empujada:
-
-```bash
-ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
-```
-
-Por defecto, `mise run gitops-deploy-staging` construye e importa imágenes locales con
-las refs `ghcr.io/...:main` y apunta Argo CD al wrapper `platform/k8s/overlays/staging-local`,
-que mantiene la topología GitOps de `staging` pero usa `imagePullPolicy: IfNotPresent`
-para no depender de que GHCR tenga esas tags publicadas en el cluster local.
-
-Si quieres forzar el camino registry-first del overlay canónico de `staging`:
-
-```bash
-STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
-```
-
-Requisitos para `staging`:
-
-- Argo CD instalado,
-- credencial del repo instalada en `argocd`,
-- clave `age` de SOPS instalada en `argocd`.
-
-En modo local por defecto no necesitas que `ghcr.io/...:main` exista en remoto; el helper
-de `staging` la construye e importa en k3s antes de sincronizar Argo CD.
-
-Smoke checks independientes:
-
-```bash
-mise run k8s-smoke
-mise run k8s-smoke-staging
-```
-
-Estado del despliegue:
-
-```bash
-mise run k8s-status
-mise run k8s-status-staging
-```
-
-Información de acceso:
-
-```bash
-mise run k8s-access
-mise run k8s-access-staging
-```
-
-Eliminación de overlays:
-
-```bash
-mise run k8s-delete-dev
-mise run k8s-delete-staging
-```
-
-El alcance operativo actual en Kubernetes dentro de este repo es `dev` y `staging`.
-
-## Comandos canónicos de calidad
-
-Estos son los comandos de referencia del proyecto:
+Comandos de referencia del proyecto:
 
 ```bash
 mise run fmt
@@ -312,125 +132,46 @@ mise run typecheck
 mise run test
 mise run docs-build
 mise run check
-mise run fix
 mise run ci
 ```
 
-Semántica:
+El repositorio mantiene paridad entre local y remoto con:
 
-- `mise run fmt`: aplica auto-fixes seguros de formato.
-- `mise run lint`: validaciones con reintentos automáticos ante hooks que auto-modifican archivos.
-- `mise run lint` usa `MISE_LINT_MAX_TRIES` (por defecto `3`) para limitar reintentos.
-- `mise run typecheck`: análisis de tipos (`pyright`) para backend.
-- `mise run test`: tests de políticas del repo + tests backend con cobertura.
-- `mise run docs-build`: build estricto de documentación con MkDocs Material.
-- `mise run check`: validación local completa (`lint + typecheck + test`).
-- `mise run fix`: alias de auto-fixes seguros.
-- `mise run ci`: camino equivalente a CI (`fmt-check + check + k8s-validate-overlays + docs-build + security`).
+- `pre-commit` como capa local de formato, lint y seguridad,
+- `CI` para `fmt-check`, `check`, `docs-build` y validación de overlays,
+- `Security` para escaneo dedicado de repo e imágenes,
+- `CodeQL` para SAST en entornos compatibles,
+- workflows de release y promocion para imagenes inmutables.
 
-Comando extra recomendado antes de PR:
+Guía operativa completa: [Calidad y CI](docs/development/quality-and-ci.md)
 
-```bash
-pre-commit run --all-files
-```
+## Mapa de documentación
 
-## CI/CD: cómo funciona en GitHub Actions
+- Primeros pasos: [Quickstart](docs/getting-started/quickstart.md), [Mapa del repositorio](docs/getting-started/repository-map.md)
+- Desarrollo: [Desarrollo local](docs/development/local-development.md), [Backend](docs/development/backend-development.md), [Frontend](docs/development/frontend-development.md), [Flujo end-to-end](docs/development/END_TO_END_WORKFLOW.md)
+- Operaciones: [Panorama operativo](docs/operations/overview.md), [Runbook k3s](docs/deployment/k3s/RUNBOOK.md), [Runbook GitOps](docs/deployment/gitops/ARGOCD_SOPS_RUNBOOK.md), [Promoción de imágenes](docs/deployment/releases/IMAGE_PROMOTION.md)
+- Referencia: [Tareas canónicas](docs/reference/commands.md), [Mapa del monorepo](docs/reference/components.md)
+- Proyecto: [Gobernanza](docs/project/governance.md), [Modelo operativo](docs/project/operating-model.md)
 
-Workflow principal:
+Portal de documentación: [docs/index.md](docs/index.md)
 
-- `.github/workflows/ci.yml`
-
-Qué ejecuta en `push` a `main` y en `pull_request`:
-
-- checkout,
-- setup de `mise`,
-- `mise run bootstrap`,
-- `fmt-check`, `check`, `docs-build` y `security`,
-- `k8s-validate-overlays` cuando el workflow dispone de `SOPS_AGE_KEY`.
-
-Esto mantiene un camino de validación equivalente en remoto sin fingir acceso a claves SOPS cuando GitHub no las expone.
-
-## Seguridad y gobernanza
-
-Guardrails activos:
-
-- hooks de baseline (`yaml/json/toml`, merge-conflict, keys, etc.),
-- `detect-secrets`,
-- `actionlint` + `check-github-workflows`,
-- `ruff` para Python,
-- `yamllint`, `markdownlint`, `typos`,
-- workflow de seguridad dedicado en `.github/workflows/security.yml`,
-- `gitleaks` en `pre-commit` y en el task `mise run security`,
-- Trivy para escaneo de imágenes de `inventory-service` y `web`,
-- CodeQL para análisis estático en entornos compatibles,
-- Dependabot para actualizaciones de dependencias (`.github/dependabot.yml`).
-
-Documentos de gobierno:
+## Gobierno del proyecto
 
 - [AGENTS.md](AGENTS.md): contrato operativo para agentes.
-- [CONTRIBUTING.md](CONTRIBUTING.md): reglas de colaboración.
-- [SECURITY.md](SECURITY.md): proceso de seguridad.
-- `.github/CODEOWNERS`: ownership y revisión.
+- [CONTRIBUTING.md](CONTRIBUTING.md): reglas de colaboración y requisitos de PR.
+- [SECURITY.md](SECURITY.md): proceso de reporte y requisitos de desarrollo seguro.
+- `.github/CODEOWNERS`: ownership obligatorio para revisión.
 
-## Escalado del proyecto (técnico y organizativo)
-
-### Escalado de código
-
-- mantener bounded contexts claros por servicio,
-- evitar acoplar dominio con infraestructura,
-- extraer nuevos servicios solo cuando exista presión real de autonomía.
-
-Señales para extraer a más microservicios:
-
-- ownership por equipo claramente separado,
-- ciclos de release muy distintos entre dominios,
-- bajo volumen de cambios cross-service,
-- necesidad de escalar componentes de forma independiente.
-
-### Escalado de plataforma
-
-- pasar de Compose a despliegues por entorno con overlays dedicados,
-- sustituir secretos inline por gestor de secretos externo,
-- añadir HPA/requests/limits y políticas de red,
-- incorporar policy-as-code (Kyverno/OPA),
-- separar observabilidad (logs, métricas, trazas) por servicio.
-
-### Escalado de repositorio
-
-Estrategia actual: monorepo modular.
-Estrategia futura: multirepo solo cuando los criterios del ADR se cumplan.
-
-## Flujo diario recomendado
-
-```bash
-git status
-mise run fmt
-mise run lint
-mise run test
-mise run check
-```
-
-Antes de abrir PR:
-
-```bash
-mise run ci
-pre-commit run --all-files
-```
-
-## Solución de problemas rápida
-
-- `mise` no se encuentra:
-  - verifica que `mise` esté inicializado en tu shell y reinicia terminal.
-- `mise run ci` falla en `fmt-check`:
-  - ejecuta `mise run fmt`, revisa diff, añade cambios y repite.
-- error en Alembic por conexión:
-  - confirma `INVENTORY_DATABASE_URL` y conectividad a PostgreSQL.
+Resumen de gobierno: [Gobernanza del proyecto](docs/project/governance.md)
 
 ## Estado actual
 
-El repositorio queda listo para desarrollo "agent-first" con:
+Atlas Platform queda preparado para:
 
 - backend y frontend funcionales,
-- migración inicial Alembic para tablas base,
-- pipeline de calidad/seguridad local y CI coherente,
-- base arquitectónica preparada para evolucionar a microservicios.
+- migraciones Alembic para el servicio de inventario,
+- flujo local coherente con CI y seguridad,
+- `dev` sobre k3s con imágenes locales reproducibles,
+- `staging` con topología GitOps y promoción por digest.
+
+Modelo operativo, troubleshooting y criterios de escalado: [Modelo operativo del proyecto](docs/project/operating-model.md)

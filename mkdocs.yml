@@ -1,6 +1,6 @@
 site_name: Atlas Platform
-site_description: Atlas platform developer documentation
-repo_url: https://github.com/albersg/agent-first-codex
+site_description: Documentación técnica y operativa de Atlas Platform
+repo_url: https://github.com/albersg/atlas-platform
 theme:
   name: material
   features:
@@ -14,19 +14,34 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - Overview: index.md
-  - Development:
-      - Dependency updates: development/DEPENDENCY_UPDATES.md
-      - End-to-end workflow: development/END_TO_END_WORKFLOW.md
-  - ADR:
-      - Monorepo vs Multirepo: adr/0001-monorepo-vs-multirepo.md
-  - Architecture:
+  - Inicio: index.md
+  - Primeros pasos:
+      - Quickstart: getting-started/quickstart.md
+      - Mapa del repositorio: getting-started/repository-map.md
+  - Desarrollo:
+      - Desarrollo local: development/local-development.md
+      - Desarrollo backend: development/backend-development.md
+      - Desarrollo frontend: development/frontend-development.md
+      - Flujo end-to-end: development/END_TO_END_WORKFLOW.md
+      - Calidad y CI: development/quality-and-ci.md
+      - Actualización de paquetes: development/DEPENDENCY_UPDATES.md
+  - Arquitectura:
+      - Resumen: architecture/overview.md
       - Hexagonal + Screaming: architecture/hexagonal-screaming-architecture.md
-      - Deployment topology: architecture/deployment-topology.md
-  - Deployment:
-      - Deployment docs overview: deployment/README.md
-      - Argo CD + SOPS runbook: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
-      - Image promotion: deployment/releases/IMAGE_PROMOTION.md
-      - K3S runbook: deployment/k3s/RUNBOOK.md
-  - Operations:
-      - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
+      - Topología de despliegue: architecture/deployment-topology.md
+  - ADRs:
+      - Indice de ADRs: adr/index.md
+      - Monorepo vs Multirepo: adr/0001-monorepo-vs-multirepo.md
+  - Operaciones:
+      - Panorama operativo: operations/overview.md
+      - Indice de deployment: deployment/README.md
+      - Runbook k3s: deployment/k3s/RUNBOOK.md
+      - Runbook GitOps con Argo CD y SOPS: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
+      - Promoción de imágenes: deployment/releases/IMAGE_PROMOTION.md
+      - Playbook Agent-First DevSecOps: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
+  - Referencia:
+      - Tareas canónicas: reference/commands.md
+      - Mapa del monorepo: reference/components.md
+  - Proyecto:
+      - Gobernanza: project/governance.md
+      - Modelo operativo: project/operating-model.md
