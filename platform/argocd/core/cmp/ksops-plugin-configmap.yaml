@@ -12,7 +12,11 @@ data:
     spec:
       allowConcurrency: true
       discover:
-        fileName: ksops-generator.yaml
+        find:
+          command:
+            - sh
+            - -c
+            - find . -name ksops-generator.yaml -print -quit
       generate:
         command:
           - sh
