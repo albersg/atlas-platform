@@ -59,6 +59,7 @@ repos:
     rev: a8d8e187146634c459c27ade2d3e338569378720 # frozen: v1.44.0 # pragma: allowlist secret
     hooks:
       - id: typos
+        exclude: ^\.sops\.yaml$
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.21.0
@@ -70,7 +71,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
-        exclude: ^(platform/k8s/overlays/.*/secrets/.*\.enc\.yaml|platform/argocd/core/upstream/install-v2\.13\.3\.yaml)$
+        exclude: ^(platform/k8s/overlays/.*/secrets/.*\.enc\.yaml|platform/argocd/core/upstream/install-v2\.13\.3\.yaml|\.sops\.yaml)$
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0

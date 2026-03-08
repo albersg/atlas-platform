@@ -65,7 +65,21 @@ mise run k8s-status-staging
 mise run k8s-access-staging
 ```
 
-`staging` permite validar el artefacto publicado, la reconciliación de Argo CD, el render KSOPS y la topología preproductiva en el cluster local.
+En local, `mise run gitops-deploy-staging` hace dos cosas adicionales por defecto:
+
+1. construye `ghcr.io/<owner>/atlas-inventory-service:main` y `ghcr.io/<owner>/atlas-web:main`,
+2. las importa en el runtime de k3s y sincroniza Argo CD contra `platform/k8s/overlays/staging-local`.
+
+Ese wrapper mantiene el modelo GitOps de `staging`, pero usa `imagePullPolicy: IfNotPresent`
+para que el cluster local pueda arrancar aunque GHCR todavía no tenga publicadas las tags `:main`.
+
+Si quieres probar exactamente el camino registry-first del overlay canónico:
+
+```bash
+STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
+
+`staging` permite validar la reconciliación de Argo CD, el render KSOPS y la topología preproductiva en el cluster local sin mezclarlo con el flujo `dev`.
 
 ## Smoke checks
 

@@ -3,6 +3,19 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ARGOCD_REPO_SECRET_NAME="${ARGOCD_REPO_SECRET_NAME:-argocd-repo-agent-first-codex}"
+STAGING_LOCAL_IMAGES="${STAGING_LOCAL_IMAGES:-1}"
+
+if [[ "$STAGING_LOCAL_IMAGES" = "1" ]]; then
+  : "${ARGOCD_APP_PATH:=platform/k8s/overlays/staging-local}"
+
+  echo "Preparando imagenes locales para staging..."
+  "$ROOT_DIR/scripts/k3s/images/build-staging.sh"
+  "$ROOT_DIR/scripts/k3s/images/import-staging.sh"
+else
+  : "${ARGOCD_APP_PATH:=platform/k8s/overlays/staging}"
+fi
+
+export ARGOCD_APP_PATH
 
 "$ROOT_DIR/scripts/k3s/cluster/preflight.sh"
 

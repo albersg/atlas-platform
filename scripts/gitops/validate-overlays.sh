@@ -14,15 +14,16 @@ fi
 
 "$ROOT_DIR/scripts/gitops/render-overlay.sh" platform/k8s/overlays/dev >"$TMP_DIR/dev.yaml"
 "$ROOT_DIR/scripts/gitops/render-overlay.sh" platform/k8s/overlays/staging >"$TMP_DIR/staging.yaml"
+"$ROOT_DIR/scripts/gitops/render-overlay.sh" platform/k8s/overlays/staging-local >"$TMP_DIR/staging-local.yaml"
 chmod 755 "$TMP_DIR"
-chmod 644 "$TMP_DIR/dev.yaml" "$TMP_DIR/staging.yaml"
+chmod 644 "$TMP_DIR/dev.yaml" "$TMP_DIR/staging.yaml" "$TMP_DIR/staging-local.yaml"
 
 docker run --rm \
   -v "$TMP_DIR:/rendered:ro" \
   ghcr.io/yannh/kubeconform:v0.6.7 \
   -strict \
   -ignore-missing-schemas \
-  /rendered/dev.yaml /rendered/staging.yaml
+  /rendered/dev.yaml /rendered/staging.yaml /rendered/staging-local.yaml
 
 docker run --rm \
   -v "$ROOT_DIR:/workdir:ro" \
@@ -31,4 +32,5 @@ docker run --rm \
   ghcr.io/kyverno/kyverno-cli:v1.15.0 \
   apply platform/policy/kyverno \
   --resource /rendered/dev.yaml \
-  --resource /rendered/staging.yaml
+  --resource /rendered/staging.yaml \
+  --resource /rendered/staging-local.yaml

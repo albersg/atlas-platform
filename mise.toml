@@ -153,6 +153,14 @@ run = "./scripts/k3s/images/build.sh"
 description = "Import local images into k3s containerd"
 run = "./scripts/k3s/images/import.sh"
 
+[tasks.k8s-build-staging-images]
+description = "Build local staging image refs for k3s"
+run = "./scripts/k3s/images/build-staging.sh"
+
+[tasks.k8s-import-staging-images]
+description = "Import local staging image refs into k3s"
+run = "./scripts/k3s/images/import-staging.sh"
+
 [tasks.k8s-deploy-dev]
 description = "Deploy dev overlay and run smoke checks"
 run = "./scripts/k3s/deploy/dev.sh"

@@ -16,8 +16,9 @@ while [ "$SECONDS" -lt "$deadline" ]; do
   sync_status="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$APP_NAME" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
   health_status="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$APP_NAME" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
   operation_phase="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$APP_NAME" -o jsonpath='{.status.operationState.phase}' 2>/dev/null || true)"
+  operation_message="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$APP_NAME" -o jsonpath='{.status.operationState.message}' 2>/dev/null || true)"
 
-  echo "Aplicacion ${APP_NAME}: sync=${sync_status:-Unknown} health=${health_status:-Unknown} operation=${operation_phase:-Idle}"
+  echo "Aplicacion ${APP_NAME}: sync=${sync_status:-Unknown} health=${health_status:-Unknown} operation=${operation_phase:-Idle}${operation_message:+ message=${operation_message}}"
 
   if [ "$sync_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
     echo "Aplicacion ${APP_NAME} sincronizada y saludable."

@@ -2,6 +2,8 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: inventory-service-pdb
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   minAvailable: 1
   selector:
