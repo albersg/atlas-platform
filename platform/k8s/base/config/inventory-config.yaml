@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: inventory-config
 data:
-  INVENTORY_APP_ENV: "prod"
+  INVENTORY_APP_ENV: "shared"
   RUN_MIGRATIONS_ON_STARTUP: "0"

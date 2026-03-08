@@ -8,9 +8,7 @@ spec:
   sourceRepos:
     - git@github.com:albersg/agent-first-codex.git
   destinations:
-    - namespace: atlas-platform-dev
-      server: https://kubernetes.default.svc
-    - namespace: atlas-platform-prod
+    - namespace: atlas-platform-staging
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""
@@ -24,8 +22,14 @@ spec:
       kind: Service
     - group: ""
       kind: PersistentVolumeClaim
+    - group: ""
+      kind: LimitRange
+    - group: ""
+      kind: ResourceQuota
     - group: apps
       kind: Deployment
+    - group: apps
+      kind: StatefulSet
     - group: batch
       kind: Job
     - group: networking.k8s.io

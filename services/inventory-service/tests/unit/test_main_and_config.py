@@ -28,7 +28,7 @@ def test_settings_defaults_and_overrides() -> None:
     assert overridden.sentry_traces_sample_rate == 0.5
 
 
-def test_create_app_healthcheck_and_no_sentry_when_dsn_missing(monkeypatch) -> None:
+def test_create_app_healthcheck_and_no_sentry_when_dsn_missing(monkeypatch, tmp_path: Path) -> None:
     from inventory_service import main as main_module
 
     init_calls: list[dict] = []
@@ -39,14 +39,41 @@ def test_create_app_healthcheck_and_no_sentry_when_dsn_missing(monkeypatch) -> N
     monkeypatch.setattr(main_module.sentry_sdk, "init", fake_sentry_init)
     monkeypatch.setattr(main_module.settings, "sentry_dsn", None)
     monkeypatch.setattr(main_module.settings, "app_name", "inventory-service")
+    monkeypatch.setattr(
+        main_module.settings,
+        "database_url",
+        f"sqlite+pysqlite:///{tmp_path / 'inventory-health.db'}",
+    )
 
     app = create_app()
     client = TestClient(app)
     response = client.get("/healthz")
+    readiness = client.get("/readyz")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "inventory-service"}
+    assert readiness.status_code == 200
+    assert readiness.json() == {"status": "ok", "service": "inventory-service"}
     assert init_calls == []
+
+
+def test_create_app_readiness_fails_when_database_unavailable(monkeypatch, tmp_path: Path) -> None:
+    from inventory_service import main as main_module
+
+    monkeypatch.setattr(
+        main_module.settings,
+        "database_url",
+        f"sqlite+pysqlite:///{tmp_path / 'does-not-exist' / 'inventory.db'}",
+    )
+    monkeypatch.setattr(main_module.settings, "sentry_dsn", None)
+
+    app = create_app()
+    client = TestClient(app)
+
+    response = client.get("/readyz")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "database unavailable"}
 
 
 def test_create_app_initializes_sentry_when_dsn_present(monkeypatch) -> None:

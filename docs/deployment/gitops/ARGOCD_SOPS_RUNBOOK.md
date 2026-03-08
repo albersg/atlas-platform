@@ -1,139 +1,127 @@
-# Argo CD + SOPS Runbook
+# Runbook GitOps con Argo CD, KSOPS y SOPS
 
-This repository supports GitOps deployment with:
+## Arquitectura
 
-- Argo CD
-- Kustomize overlays
-- KSOPS plugin for Kustomize
-- SOPS with age-encrypted Kubernetes secrets stored in git
+- `platform/argocd/core/`: instalación de Argo CD y plugin KSOPS.
+- `platform/argocd/apps/`: bundle GitOps operativo para `staging`.
+- `platform/k8s/overlays/*/secrets/*.enc.yaml`: secrets cifrados con SOPS.
+- `.sops.yaml`: política de cifrado del repositorio.
+- `.gitops-local/`: material local ignorado por git para bootstrap y validación.
 
-## Architecture
+## Modelo de entornos
 
-- `platform/argocd/core/`: Argo CD installation, AppProject, and repo-server KSOPS integration.
-- `platform/argocd/apps/`: Argo CD Applications for `dev` and `prod`.
-- `platform/k8s/overlays/*/secrets/*.enc.yaml`: encrypted secrets committed to git.
-- `.sops.yaml`: repository encryption policy with the age public key recipient.
-- `.gitops-local/age/keys.txt` (ignored): local private key used to encrypt/decrypt and bootstrap Argo CD.
-- `.gitops-local/ssh/argocd-repo` (ignored): read-only deploy key for Argo CD to clone the private repository.
+- `dev`: entorno local-lab gestionado por `kubectl apply`, fuera de Argo CD.
+- `staging`: entorno preproductivo, auto-sync, prune, self-heal e imágenes desde registry.
 
-## Secret model
+El alcance operativo actual termina en `staging`.
 
-- Secrets are encrypted with the age public key from `.sops.yaml`.
-- The matching private key is **not** stored in git.
-- Argo CD decrypts secrets at sync time using a Kubernetes secret named `argocd-sops-age-key`.
+## Flujo de bootstrap no production
 
-## Bootstrap flow
-
-### 1. Install local helper binaries
+### 1. Instalar herramientas auxiliares
 
 ```bash
 mise run gitops-install-tools
 ```
 
-### 2. Generate the local age key (one-time)
+### 2. Generar la clave age local
 
 ```bash
 ./scripts/gitops/bootstrap/generate-age-key.sh
 ```
 
-This creates:
-
-- `.gitops-local/age/keys.txt` (ignored by git)
-
-### 3. Install Argo CD core
+### 3. Instalar Argo CD core
 
 ```bash
 mise run gitops-bootstrap-core
 ```
 
-### 4. Generate the GitHub deploy key for Argo CD
+### 4. Generar la deploy key de GitHub para Argo CD
 
 ```bash
 ./scripts/gitops/bootstrap/generate-repo-deploy-key.sh
 ```
 
-Add the printed public key to GitHub:
-
-- `Repository -> Settings -> Deploy keys -> Add deploy key`
-- mark it as **read-only**
-
-### 5. Install the repository credential into Argo CD
+### 5. Instalar la credential del repositorio en Argo CD
 
 ```bash
 ./scripts/gitops/bootstrap/install-repo-credential.sh
 ```
 
-### 6. Install the age private key into Argo CD
+### 6. Instalar la clave privada age en Argo CD
 
 ```bash
 mise run gitops-install-age-key
 ```
 
-This creates `argocd/argocd-sops-age-key` in the cluster.
-
-### 7. Apply Argo CD applications
+### 7. Aplicar las aplicaciones no productivas
 
 ```bash
 mise run gitops-apply-apps
 ```
 
-For local branch testing before merge, point the Applications at a pushed branch or commit:
+Esto aplica:
+
+- `atlas-platform-staging`
+
+Para probar una rama ya empujada antes del merge:
 
 ```bash
 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-apply-apps
 ```
 
-At that point Argo CD can sync the encrypted `dev` and `prod` overlays into their
-dedicated namespaces:
+Para esperar sincronización y verificar `staging` de extremo a extremo:
 
-- `atlas-platform-dev`
-- `atlas-platform-prod`
+```bash
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
 
-## Local render validation
-
-Before trusting a sync, validate overlays locally:
+## Validación local antes de sincronizar
 
 ```bash
 mise run gitops-render-dev >/dev/null
-mise run gitops-render-prod >/dev/null
+mise run gitops-render-staging >/dev/null
+mise run k8s-validate-overlays
 ```
 
-## Access Argo CD locally
-
-### Login helper
+## Acceso local a Argo CD
 
 ```bash
 ./scripts/gitops/argocd/login-local.sh
 ```
 
-### Initial admin password only
-
 ```bash
 ./scripts/gitops/argocd/get-initial-password.sh
 ```
 
-After login, inspect:
+## Política de sync
 
-- `atlas-platform-dev`
-- `atlas-platform-prod`
+- `atlas-platform-staging`: auto-sync, prune y self-heal.
 
-## Sync policy
+## Promoción de imágenes
 
-- `atlas-platform-dev`: automated sync, prune, self-heal.
-- `atlas-platform-prod`: manual sync by default.
+La promoción correcta ya no es por tags mutables sino por digest.
 
-## Rotation and re-encryption
+`staging` debe consumir imágenes publicadas en registry. El workflow de promoción exige `SOPS_AGE_KEY` para validar el overlay antes de abrir la PR.
 
-If you rotate the age key pair:
+Consulta:
 
-1. update `.sops.yaml` with the new public key,
-2. re-encrypt `platform/k8s/overlays/*/secrets/*.enc.yaml`,
-3. update `argocd-sops-age-key` in the cluster,
-4. re-run local render validation.
+- `docs/deployment/releases/IMAGE_PROMOTION.md`
 
-## Security notes
+## Rotación de claves SOPS
 
-- Do not commit `.gitops-local/age/keys.txt`.
-- Do not commit `.gitops-local/ssh/argocd-repo`.
-- Treat the Argo CD namespace as sensitive because it contains the decryption key.
-- For production, back up the private key in a secure out-of-band system.
+Si rotas la pareja de claves age:
+
+1. actualiza `.sops.yaml`,
+2. re-cifra `platform/k8s/overlays/*/secrets/*.enc.yaml`,
+3. actualiza `argocd-sops-age-key` en el cluster correspondiente,
+4. vuelve a renderizar overlays localmente,
+5. re-sincroniza Argo CD.
+
+## Notas de seguridad
+
+- no commits `.gitops-local/age/keys.txt`,
+- no commits `.gitops-local/ssh/argocd-repo`,
+- trata el namespace `argocd` como sensible,
+- mantén `dev` y `staging` como frontera no productiva,
+- configura `SOPS_AGE_KEY` en GitHub Actions para validar overlays cifrados en CI y promoción,
+- deja producción fuera de este flujo hasta tener infraestructura separada.

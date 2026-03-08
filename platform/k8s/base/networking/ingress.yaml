@@ -17,27 +17,6 @@ spec:
                 name: inventory-service
                 port:
                   number: 8000
-          - path: /docs
-            pathType: Prefix
-            backend:
-              service:
-                name: inventory-service
-                port:
-                  number: 8000
-          - path: /openapi.json
-            pathType: Prefix
-            backend:
-              service:
-                name: inventory-service
-                port:
-                  number: 8000
-          - path: /healthz
-            pathType: Prefix
-            backend:
-              service:
-                name: inventory-service
-                port:
-                  number: 8000
           - path: /
             pathType: Prefix
             backend:
@@ -48,7 +27,7 @@ spec:
     - host: api.atlas.local
       http:
         paths:
-          - path: /
+          - path: /api
             pathType: Prefix
             backend:
               service:

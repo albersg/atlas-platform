@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - workloads/postgres-statefulset.yaml
+  - networking/postgres-service.yaml
+  - resilience/postgres-pdb.yaml
+  - networkpolicy-postgres.yaml
+  - networkpolicy-inventory-service-postgres-egress.yaml
+  - networkpolicy-inventory-migration-postgres-egress.yaml

@@ -5,5 +5,4 @@ namespace: argocd
 
 resources:
   - project-atlas-platform.yaml
-  - atlas-platform-dev.yaml
-  - atlas-platform-prod.yaml
+  - atlas-platform-staging.yaml

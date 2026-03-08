@@ -3,6 +3,8 @@ kind: Namespace
 metadata:
   name: atlas-platform-dev
   labels:
+    app.kubernetes.io/part-of: atlas-platform
+    atlas-platform.io/environment: dev
     pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/audit: baseline
-    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

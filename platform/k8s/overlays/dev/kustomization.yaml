@@ -5,18 +5,16 @@ namespace: atlas-platform-dev
 
 resources:
   - namespace.yaml
+  - limitrange.yaml
+  - resourcequota.yaml
   - ../../base
+  - ../../components/in-cluster-postgres
 
 generators:
   - ksops-generator.yaml
 
-images:
-  - name: ghcr.io/example/atlas-inventory-service
-    newName: atlas-inventory-service
-    newTag: dev
-  - name: ghcr.io/example/atlas-web
-    newName: atlas-web
-    newTag: dev
+components:
+  - ../../components/images/dev
 
 patches:
   - target:
@@ -53,6 +51,20 @@ patches:
       - op: replace
         path: /spec/maxReplicas
         value: 2
+  - target:
+      kind: PodDisruptionBudget
+      name: inventory-service-pdb
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 0
+  - target:
+      kind: PodDisruptionBudget
+      name: web-pdb
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 0
   - target:
       kind: ConfigMap
       name: inventory-config

@@ -1,6 +1,6 @@
 site_name: Atlas Platform
 site_description: Atlas platform developer documentation
-repo_url: https://github.com/example/atlas-platform
+repo_url: https://github.com/albersg/agent-first-codex
 theme:
   name: material
   features:
@@ -26,6 +26,7 @@ nav:
   - Deployment:
       - Deployment docs overview: deployment/README.md
       - Argo CD + SOPS runbook: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
+      - Image promotion: deployment/releases/IMAGE_PROMOTION.md
       - K3S runbook: deployment/k3s/RUNBOOK.md
   - Operations:
       - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md

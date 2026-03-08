@@ -5,7 +5,7 @@ namespace: argocd
 
 resources:
   - namespace.yaml
-  - https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/install.yaml
+  - upstream/install-v2.13.3.yaml
   - cmp/ksops-plugin-configmap.yaml
 
 patches:

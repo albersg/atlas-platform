@@ -1,19 +1,21 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: inventory-migration
-  namespace: atlas-platform
+  name: postgres
 spec:
   podSelector:
     matchLabels:
-      app: inventory-migration
+      app: postgres
   policyTypes:
-    - Egress
-  egress:
-    - to:
+    - Ingress
+  ingress:
+    - from:
         - podSelector:
             matchLabels:
-              app: postgres
+              app: inventory-service
+        - podSelector:
+            matchLabels:
+              app: inventory-migration
       ports:
         - protocol: TCP
           port: 5432

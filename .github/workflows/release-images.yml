@@ -1,0 +1,140 @@
+name: Release Images
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-images-main
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/atlas-inventory-service
+  WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/atlas-web
+  SOURCE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+  SOURCE_BRANCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  COSIGN_VERSION: v2.4.3
+  SYFT_VERSION: v1.20.0
+
+jobs:
+  build-sign-publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Login to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
+
+      - name: Enable buildx
+        run: |
+          docker buildx create --name atlas-builder --use || docker buildx use atlas-builder
+          docker buildx inspect --bootstrap
+
+      - name: Build and push inventory-service image
+        run: |
+          tags=(
+            --tag "$BACKEND_IMAGE:$SOURCE_SHA"
+          )
+          if [ "$SOURCE_BRANCH" = "main" ]; then
+            tags+=(--tag "$BACKEND_IMAGE:main")
+          fi
+
+          docker buildx build \
+            --platform linux/amd64 \
+            --push \
+            --label org.opencontainers.image.source="https://github.com/${{ github.repository }}" \
+            --label org.opencontainers.image.revision="$SOURCE_SHA" \
+            --metadata-file backend-metadata.json \
+            "${tags[@]}" \
+            --file services/inventory-service/Dockerfile \
+            services/inventory-service
+
+      - name: Build and push web image
+        run: |
+          tags=(
+            --tag "$WEB_IMAGE:$SOURCE_SHA"
+          )
+          if [ "$SOURCE_BRANCH" = "main" ]; then
+            tags+=(--tag "$WEB_IMAGE:main")
+          fi
+
+          docker buildx build \
+            --platform linux/amd64 \
+            --push \
+            --label org.opencontainers.image.source="https://github.com/${{ github.repository }}" \
+            --label org.opencontainers.image.revision="$SOURCE_SHA" \
+            --metadata-file web-metadata.json \
+            "${tags[@]}" \
+            --file apps/web/Dockerfile \
+            apps/web
+
+      - name: Capture published digests
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json
+
+          def digest(path: str) -> str:
+              metadata = json.load(open(path, encoding="utf-8"))
+              return metadata["containerimage.digest"]
+
+          backend = digest("backend-metadata.json")
+          web = digest("web-metadata.json")
+          print(f"BACKEND_DIGEST={backend}")
+          print(f"WEB_DIGEST={web}")
+          PY
+
+      - name: Scan published images with Trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed "$BACKEND_IMAGE@$BACKEND_DIGEST"
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed "$WEB_IMAGE@$WEB_DIGEST"
+
+      - name: Install Syft and Cosign
+        run: |
+          curl -fsSL "https://github.com/anchore/syft/releases/download/${SYFT_VERSION}/syft_${SYFT_VERSION#v}_linux_amd64.tar.gz" | tar -xz syft
+          sudo mv syft /usr/local/bin/syft
+          curl -fsSL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" -o cosign
+          chmod +x cosign
+          sudo mv cosign /usr/local/bin/cosign
+
+      - name: Generate SBOMs
+        run: |
+          syft "$BACKEND_IMAGE@$BACKEND_DIGEST" -o spdx-json > backend.spdx.json
+          syft "$WEB_IMAGE@$WEB_DIGEST" -o spdx-json > web.spdx.json
+
+      - name: Sign images and attach SBOM attestations
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign "$BACKEND_IMAGE@$BACKEND_DIGEST"
+          cosign sign "$WEB_IMAGE@$WEB_DIGEST"
+          cosign attest --predicate backend.spdx.json --type spdxjson "$BACKEND_IMAGE@$BACKEND_DIGEST"
+          cosign attest --predicate web.spdx.json --type spdxjson "$WEB_IMAGE@$WEB_DIGEST"
+
+      - name: Publish release summary
+        run: |
+          {
+            echo "## Published image digests"
+            echo
+            echo "- inventory-service: \`$BACKEND_IMAGE@$BACKEND_DIGEST\`"
+            echo "- web: \`$WEB_IMAGE@$WEB_DIGEST\`"
+          } >> "$GITHUB_STEP_SUMMARY"

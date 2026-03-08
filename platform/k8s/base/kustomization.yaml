@@ -3,13 +3,9 @@ kind: Kustomization
 
 resources:
   - config/inventory-config.yaml
-  - data/postgres-pvc.yaml
-  - workloads/postgres-deployment.yaml
-  - networking/postgres-service.yaml
   - workloads/inventory-migration-job.yaml
   - workloads/inventory-service-deployment.yaml
   - networking/inventory-service-service.yaml
-  - postgres-pdb.yaml
   - resilience/inventory-service-pdb.yaml
   - resilience/inventory-service-hpa.yaml
   - workloads/web-deployment.yaml
@@ -20,6 +16,4 @@ resources:
   - networkpolicy-allow-dns-egress.yaml
   - networkpolicy-web.yaml
   - networkpolicy-inventory-service.yaml
-  - networkpolicy-inventory-migration.yaml
-  - networkpolicy-postgres.yaml
   - networking/ingress.yaml

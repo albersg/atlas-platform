@@ -74,13 +74,34 @@ mise run k8s-status
 mise run k8s-access
 ```
 
+`mise run k8s-build-images` writes the current dev image tags to
+`.gitops-local/k3s/dev-images.env`; `k8s-import-images` and `k8s-deploy-dev` reuse
+that state so the cluster rolls forward to the exact images that were just built.
+
 Delete dev deployment:
 
 ```bash
 mise run k8s-delete-dev
 ```
 
-## 6) Observability and runtime configuration
+## 6) GitOps + registry flow (staging)
+
+Prerequisites:
+
+- the target images exist in GHCR,
+- Argo CD is installed in the cluster,
+- the repo credential is installed in `argocd`,
+- the SOPS age key is installed in `argocd`.
+
+Typical flow:
+
+```bash
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+mise run k8s-status-staging
+mise run k8s-access-staging
+```
+
+## 7) Observability and runtime configuration
 
 Backend Sentry (optional):
 
@@ -93,7 +114,7 @@ Frontend Sentry (optional):
 - `VITE_SENTRY_ENVIRONMENT`
 - `VITE_SENTRY_TRACES_SAMPLE_RATE`
 
-## 7) PR readiness checklist
+## 8) PR readiness checklist
 
 - Architecture boundaries preserved (domain/application/ports/adapters).
 - No secrets or private material committed.
@@ -101,12 +122,14 @@ Frontend Sentry (optional):
 - Rollback path documented if the change is risky.
 - Docs updated (`README`, runbooks, ADRs if needed).
 
-## 8) Release baseline
+## 9) Release baseline
 
-For production-like promotion:
+For the current non-production release flow:
 
-1. build immutable images with version tags,
-2. update overlays to versioned images,
-3. apply manifests,
+1. build immutable images and publish them to the registry,
+2. capture the published digests,
+3. promote `staging` by digest through a pull request,
 4. verify health checks and key paths,
 5. monitor logs/errors/metrics and rollback quickly if needed.
+
+Production rollout is intentionally deferred until there is separate production infrastructure.

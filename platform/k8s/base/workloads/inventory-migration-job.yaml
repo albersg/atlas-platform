@@ -3,12 +3,15 @@ kind: Job
 metadata:
   name: inventory-migration
   annotations:
-    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
     argocd.argoproj.io/sync-wave: "-1"
 spec:
+  completions: 1
+  parallelism: 1
   backoffLimit: 3
   ttlSecondsAfterFinished: 3600
+  activeDeadlineSeconds: 900
   template:
     metadata:
       labels:
@@ -21,15 +24,19 @@ spec:
           type: RuntimeDefault
       containers:
         - name: inventory-migration
-          image: ghcr.io/example/atlas-inventory-service:latest
+          image: ghcr.io/albersg/atlas-inventory-service:main
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-ec", "alembic upgrade head"]
+          command: ["/app/scripts/migrate.sh"]
           env:
             - name: INVENTORY_DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: inventory-secrets
                   key: INVENTORY_DATABASE_URL
+            - name: DB_WAIT_MAX_ATTEMPTS
+              value: "90"
+            - name: DB_WAIT_SLEEP_SECONDS
+              value: "2"
           resources:
             requests:
               cpu: 50m
