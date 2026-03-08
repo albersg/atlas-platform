@@ -6,15 +6,14 @@ Hexagonal + screaming architecture service for inventory management.
 
 ```bash
 cd services/inventory-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-uvicorn inventory_service.main:app --reload
+uv sync --extra dev
+uv run uvicorn inventory_service.main:app --reload
 ```
 
 ## Endpoints
 
 - `GET /healthz`
+- `GET /readyz`
 - `GET /api/v1/inventory/products`
 - `POST /api/v1/inventory/products`
 - `GET /api/v1/inventory/products/{product_id}`

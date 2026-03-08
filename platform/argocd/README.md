@@ -1,8 +1,20 @@
 # Argo CD Layout
 
-- `core/`: installs Argo CD itself, AppProject, and KSOPS plugin integration.
-- `apps/`: Argo CD `Application` resources for repository overlays.
+- `core/`: installs Argo CD itself and the KSOPS/SOPS integration.
+- `apps/`: staging GitOps bundle.
 
-The repository uses Argo CD + KSOPS + SOPS(age) so encrypted Kubernetes secrets can stay in git while decryption happens inside the repo-server during sync.
+The repository keeps encrypted Kubernetes secrets in git for GitOps rendering via KSOPS. The local/non-production bootstrap applies only `platform/argocd/apps`.
 
-The committed `Application` manifests track `main` by default. For local validation on an unmerged branch, use `ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-apply-apps` after pushing the branch.
+For local branch validation on a pushed branch, use:
+
+```bash
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-apply-apps
+```
+
+To wait for the staging application and run namespace smoke checks after sync:
+
+```bash
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
+
+Production is intentionally outside the current operational scope of this repository.

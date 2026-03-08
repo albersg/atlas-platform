@@ -4,6 +4,8 @@ metadata:
   name: inventory-service
 spec:
   replicas: 2
+  minReadySeconds: 5
+  progressDeadlineSeconds: 600
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
@@ -23,9 +25,16 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: inventory-service
       containers:
         - name: inventory-service
-          image: ghcr.io/example/atlas-inventory-service:latest
+          image: ghcr.io/albersg/atlas-inventory-service:main
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -56,6 +65,7 @@ spec:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
             runAsUser: 10001
+            runAsGroup: 10001
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
@@ -64,7 +74,7 @@ spec:
               mountPath: /tmp
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -80,7 +90,7 @@ spec:
             failureThreshold: 3
           startupProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: 8000
             periodSeconds: 5
             failureThreshold: 30

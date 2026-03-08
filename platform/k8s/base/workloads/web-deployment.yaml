@@ -4,6 +4,8 @@ metadata:
   name: web
 spec:
   replicas: 2
+  minReadySeconds: 5
+  progressDeadlineSeconds: 600
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
@@ -23,9 +25,16 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: web
       containers:
         - name: web
-          image: ghcr.io/example/atlas-web:latest
+          image: ghcr.io/albersg/atlas-web:main
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -39,6 +48,8 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]

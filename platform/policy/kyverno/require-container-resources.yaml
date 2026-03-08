@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-container-resources
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-container-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - Job
+              namespaces:
+                - atlas-platform-dev
+                - atlas-platform-staging
+      validate:
+        message: Containers must declare cpu and memory requests and limits.
+        foreach:
+          - list: request.object.spec.template.spec.containers
+            pattern:
+              resources:
+                requests:
+                  cpu: "?*"
+                  memory: "?*"
+                limits:
+                  cpu: "?*"
+                  memory: "?*"

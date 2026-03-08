@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-probes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+              namespaces:
+                - atlas-platform-dev
+                - atlas-platform-staging
+      validate:
+        message: Deployments and StatefulSets must define startup, liveness, and readiness probes.
+        foreach:
+          - list: request.object.spec.template.spec.containers
+            pattern:
+              startupProbe: {}
+              livenessProbe: {}
+              readinessProbe: {}

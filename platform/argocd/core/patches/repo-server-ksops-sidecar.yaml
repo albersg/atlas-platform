@@ -10,14 +10,37 @@ spec:
         - name: install-ksops-tools
           image: public.ecr.aws/docker/library/alpine:3.21
           imagePullPolicy: IfNotPresent
+          env:
+            - name: KSOPS_URL
+              value: https://github.com/viaduct-ai/kustomize-sops/releases/download/v4.4.0/ksops_4.4.0_Linux_x86_64.tar.gz
+            - name: KSOPS_SHA256
+              value: 72973ce5a97d7ad0318c9f6ae4df2aa94a4a564c45fdf71772b759dff4df0cb4 # pragma: allowlist secret
+            - name: KUSTOMIZE_URL
+              value: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz
+            - name: KUSTOMIZE_SHA256
+              value: 3669470b454d865c8184d6bce78df05e977c9aea31c30df3c669317d43bcc7a7 # pragma: allowlist secret
           command:
             - sh
             - -ec
             - |
               apk add --no-cache curl tar
               mkdir -p /custom-tools/bin /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops
-              curl -fsSL https://github.com/viaduct-ai/kustomize-sops/releases/download/v4.4.0/ksops_4.4.0_Linux_x86_64.tar.gz | tar --no-same-owner -xz -C /custom-tools/bin
-              curl -fsSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar --no-same-owner -xz -C /custom-tools/bin
+
+              download_and_extract() {
+                local url="$1"
+                local expected_sha256="$2"
+                local target_dir="$3"
+                local archive
+
+                archive="$(mktemp)"
+                curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL "$url" -o "$archive"
+                printf '%s  %s\n' "$expected_sha256" "$archive" | sha256sum -c - >/dev/null
+                tar --no-same-owner -xzf "$archive" -C "$target_dir"
+                rm -f "$archive"
+              }
+
+              download_and_extract "$KSOPS_URL" "$KSOPS_SHA256" /custom-tools/bin
+              download_and_extract "$KUSTOMIZE_URL" "$KUSTOMIZE_SHA256" /custom-tools/bin
               chmod +x /custom-tools/bin/ksops /custom-tools/bin/kustomize
               ln -sf /custom-tools/bin/ksops /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops/ksops
           securityContext:

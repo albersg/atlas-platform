@@ -154,20 +154,40 @@ description = "Import local images into k3s containerd"
 run = "./scripts/k3s/images/import.sh"
 
 [tasks.k8s-deploy-dev]
-description = "Deploy dev overlay to k3s and wait for readiness"
+description = "Deploy dev overlay and run smoke checks"
 run = "./scripts/k3s/deploy/dev.sh"
+
+[tasks.k8s-smoke]
+description = "Run smoke checks against the dev namespace"
+run = "./scripts/k3s/verify/smoke.sh dev atlas-platform-dev"
+
+[tasks.k8s-smoke-staging]
+description = "Run smoke checks against the staging namespace"
+run = "./scripts/k3s/verify/smoke.sh staging atlas-platform-staging"
 
 [tasks.k8s-status]
 description = "Show k3s workload, service and ingress status"
 run = "./scripts/k3s/cluster/status.sh"
 
+[tasks.k8s-status-staging]
+description = "Show staging workload, service and ingress status"
+run = "./scripts/k3s/cluster/status.sh atlas-platform-staging"
+
 [tasks.k8s-access]
 description = "Print host mapping and access URLs"
 run = "./scripts/k3s/cluster/access.sh"
 
+[tasks.k8s-access-staging]
+description = "Print staging host mapping and access URLs"
+run = "./scripts/k3s/cluster/access.sh atlas-platform-staging staging.atlas.example.com api.staging.atlas.example.com"
+
 [tasks.k8s-delete-dev]
 description = "Delete dev overlay resources from k3s"
-run = "kubectl delete -k platform/k8s/overlays/dev --ignore-not-found"
+run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/dev | kubectl delete -f - --ignore-not-found"
+
+[tasks.k8s-delete-staging]
+description = "Delete staging overlay resources from k3s"
+run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/staging | kubectl delete -f - --ignore-not-found"
 
 [tasks.gitops-install-tools]
 description = "Install local Argo CD, SOPS, age, and kustomize helper binaries"
@@ -186,16 +206,36 @@ description = "Install the Argo CD repository credential from the local deploy k
 run = "./scripts/gitops/bootstrap/install-repo-credential.sh"
 
 [tasks.gitops-apply-apps]
-description = "Apply Argo CD applications for dev and prod overlays"
+description = "Apply the Argo CD application bundle for staging"
 run = "./scripts/gitops/bootstrap/apply-apps.sh"
+
+[tasks.gitops-apply-staging]
+description = "Apply only the staging Argo CD application"
+run = "./scripts/gitops/bootstrap/apply-staging-app.sh"
+
+[tasks.gitops-wait-staging]
+description = "Wait for the staging Argo CD app"
+run = "./scripts/gitops/wait-app.sh atlas-platform-staging"
+
+[tasks.gitops-deploy-staging]
+description = "Deploy staging via Argo CD and run smoke checks"
+run = "./scripts/gitops/deploy/staging.sh"
 
 [tasks.gitops-render-dev]
 description = "Render the encrypted dev overlay locally via KSOPS"
 run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/dev"
 
-[tasks.gitops-render-prod]
-description = "Render the encrypted prod overlay locally via KSOPS"
-run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/prod"
+[tasks.gitops-render-staging]
+description = "Render the encrypted staging overlay locally via KSOPS"
+run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/staging"
+
+[tasks.k8s-validate-overlays]
+description = "Render dev and staging overlays and validate them"
+run = "./scripts/gitops/validate-overlays.sh"
+
+[tasks.policy-check]
+description = "Run policy validation against rendered dev and staging overlays"
+run = "./scripts/gitops/validate-overlays.sh"
 
 [tasks.check]
 description = "Run complete local validation"
@@ -224,6 +264,7 @@ description = "Run CI-equivalent validation path"
 run = [
   "mise run fmt-check",
   "mise run check",
+  "mise run k8s-validate-overlays",
   "mise run docs-build",
   "mise run security"
 ]

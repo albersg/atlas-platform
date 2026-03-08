@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-container-security-context
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-container-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - Job
+              namespaces:
+                - atlas-platform-dev
+                - atlas-platform-staging
+      validate:
+        message: Application containers must drop capabilities, disable privilege escalation, and run as non-root.
+        foreach:
+          - list: request.object.spec.template.spec.containers
+            pattern:
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                capabilities:
+                  drop:
+                    - ALL

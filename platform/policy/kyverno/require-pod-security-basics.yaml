@@ -1,0 +1,29 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-pod-security-basics
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-pod-security-basics
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - Job
+              namespaces:
+                - atlas-platform-dev
+                - atlas-platform-staging
+      validate:
+        message: Pods must disable service account token mounting and use RuntimeDefault seccomp.
+        pattern:
+          spec:
+            template:
+              spec:
+                automountServiceAccountToken: false
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault

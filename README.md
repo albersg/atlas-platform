@@ -1,6 +1,6 @@
 # Atlas Platform Monorepo
 
-Plantilla de plataforma "agent-first" orientada a producción, con backend, frontend, base de datos, CI/CD y guardrails DevSecOps para trabajar de forma consistente y escalable.
+Plantilla de plataforma "agent-first" para desarrollo y preproducción, con backend, frontend, base de datos, CI/CD y guardrails DevSecOps para trabajar de forma consistente y escalable.
 
 ## Objetivo del repositorio
 
@@ -18,13 +18,13 @@ Este repositorio está diseñado para:
 - Frontend: React + Vite + TypeScript (`apps/web`).
 - Base de datos: PostgreSQL.
 - Orquestación local: Docker Compose.
-- Orquestación cluster: Kubernetes/k3s con Kustomize (`platform/k8s`).
+- Orquestación cluster: Kubernetes/k3s con Kustomize + Argo CD (`platform/k8s`, `platform/argocd`).
 - Calidad y testing: `ruff`, `pyright`, `pytest`, `pytest-cov`.
 - Observabilidad de errores: `sentry-sdk` (opcional vía DSN).
 - Documentación: `mkdocs-material`.
 - Dependency management remoto: `Dependabot`.
 - Escaneo de credenciales expuestas: `gitleaks` + `detect-secrets`.
-- Escaneo de contenedores: `Trivy` en pipeline de seguridad.
+- Escaneo y promoción de contenedores: `Trivy` + GHCR + Cosign en pipelines de release.
 - SAST remoto: `CodeQL` (ejecución automática en repos públicos).
 - Developer platform: `mise`, `pre-commit`.
 - CI remoto: GitHub Actions.
@@ -42,7 +42,8 @@ Documentación de referencia:
 - [Topología de despliegue](docs/architecture/deployment-topology.md)
 - [Actualización automática de dependencias](docs/development/DEPENDENCY_UPDATES.md)
 - [Flujo end-to-end de desarrollo](docs/development/END_TO_END_WORKFLOW.md)
-- [Runbook GitOps con Argo CD + SOPS](docs/deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)
+- [Runbook GitOps con Argo CD + KSOPS + SOPS](docs/deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)
+- [Promoción de imágenes por digest](docs/deployment/releases/IMAGE_PROMOTION.md)
 - [Runbook de despliegue k3s](docs/deployment/k3s/RUNBOOK.md)
 - [Contrato operativo de agentes](AGENTS.md)
 
@@ -56,9 +57,13 @@ Documentación de referencia:
 │   ├── inventory-service/        # Backend funcional (FastAPI + Alembic)
 │   └── billing-service/          # Scaffold para siguiente bounded context
 ├── platform/
-│   └── k8s/                      # Manifiestos base + overlays
+│   ├── argocd/                   # Argo CD core + bundles por entorno
+│   ├── k8s/                      # Base, componentes reutilizables y overlays
+│   └── policy/                   # Policy-as-code para dev/staging
 ├── scripts/
-│   └── k3s/                      # Scripts operativos para despliegue en k3s
+│   ├── gitops/                   # Bootstrap, render y validación GitOps
+│   ├── k3s/                      # Scripts operativos para despliegue en k3s
+│   └── release/                  # Helpers de promoción por digest
 ├── docs/
 │   ├── adr/
 │   ├── architecture/
@@ -105,7 +110,8 @@ Endpoints locales:
 
 - Web: `http://localhost:8080`
 - API docs: `http://localhost:8000/docs`
-- Health check API: `http://localhost:8000/healthz`
+- API liveness: `http://localhost:8000/healthz`
+- API readiness: `http://localhost:8000/readyz`
 
 Ver logs:
 
@@ -136,6 +142,7 @@ mise run backend-test
 Endpoints actuales de `inventory-service`:
 
 - `GET /healthz`
+- `GET /readyz`
 - `GET /api/v1/inventory/products`
 - `POST /api/v1/inventory/products`
 - `GET /api/v1/inventory/products/{product_id}`
@@ -203,7 +210,12 @@ Frontend (`apps/web`) usa Sentry si se define:
 - `VITE_SENTRY_ENVIRONMENT` (opcional)
 - `VITE_SENTRY_TRACES_SAMPLE_RATE` (ejemplo `0.1`)
 
-## Flujo 6: despliegue en k3s (dev)
+## Flujo 6: despliegue en k3s y GitOps
+
+Matriz operativa actual:
+
+- `dev`: laboratorio local, imágenes locales + `kubectl apply`, namespace `atlas-platform-dev`.
+- `staging`: registry + Argo CD, promoción por digest y namespace `atlas-platform-staging`.
 
 Comprobación de prerequisitos del cluster:
 
@@ -211,41 +223,70 @@ Comprobación de prerequisitos del cluster:
 mise run k8s-preflight
 ```
 
-Construcción de imágenes locales:
+Construcción de imágenes locales para `dev`:
 
 ```bash
 mise run k8s-build-images
 ```
 
-Importación de imágenes al runtime de k3s:
+Este paso genera tags locales únicos por build y guarda el estado activo en
+`.gitops-local/k3s/dev-images.env` para que `import` y `deploy` usen exactamente
+las mismas imágenes.
+
+Importación de imágenes al runtime de k3s para `dev`:
 
 ```bash
 mise run k8s-import-images
 ```
 
-Despliegue completo y espera activa hasta estado saludable:
+Despliegue local completo de `dev`:
 
 ```bash
 mise run k8s-deploy-dev
+```
+
+Despliegue de `staging` vía Argo CD sobre una revisión ya empujada:
+
+```bash
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
+
+Requisitos para `staging`:
+
+- imágenes publicadas en GHCR,
+- Argo CD instalado,
+- credencial del repo instalada en `argocd`,
+- clave `age` de SOPS instalada en `argocd`.
+
+Smoke checks independientes:
+
+```bash
+mise run k8s-smoke
+mise run k8s-smoke-staging
 ```
 
 Estado del despliegue:
 
 ```bash
 mise run k8s-status
+mise run k8s-status-staging
 ```
 
 Información de acceso:
 
 ```bash
 mise run k8s-access
+mise run k8s-access-staging
 ```
 
-Eliminación del overlay dev:
+Eliminación de overlays:
 
 ```bash
 mise run k8s-delete-dev
+mise run k8s-delete-staging
 ```
+
+El alcance operativo actual en Kubernetes dentro de este repo es `dev` y `staging`.
 
 ## Comandos canónicos de calidad
 
@@ -272,7 +313,7 @@ Semántica:
 - `mise run docs-build`: build estricto de documentación con MkDocs Material.
 - `mise run check`: validación local completa (`lint + typecheck + test`).
 - `mise run fix`: alias de auto-fixes seguros.
-- `mise run ci`: camino equivalente a CI (`fmt-check + check + docs-build + security`).
+- `mise run ci`: camino equivalente a CI (`fmt-check + check + k8s-validate-overlays + docs-build + security`).
 
 Comando extra recomendado antes de PR:
 
@@ -291,9 +332,10 @@ Qué ejecuta en `push` a `main` y en `pull_request`:
 - checkout,
 - setup de `mise`,
 - `mise run bootstrap`,
-- `mise run ci`.
+- `fmt-check`, `check`, `docs-build` y `security`,
+- `k8s-validate-overlays` cuando el workflow dispone de `SOPS_AGE_KEY`.
 
-Esto garantiza que lo que pasa en local con los comandos canónicos es lo mismo que se valida en remoto.
+Esto mantiene un camino de validación equivalente en remoto sin fingir acceso a claves SOPS cuando GitHub no las expone.
 
 ## Seguridad y gobernanza
 

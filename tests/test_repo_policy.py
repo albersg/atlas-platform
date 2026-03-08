@@ -16,6 +16,8 @@ class RepoPolicyTests(unittest.TestCase):
             ".github/workflows/codeql.yml",
             ".github/workflows/dependency-review.yml",
             ".github/workflows/pre-commit-autoupdate.yml",
+            ".github/workflows/release-images.yml",
+            ".github/workflows/promote-staging.yml",
             ".github/dependabot.yml",
             ".github/CODEOWNERS",
             ".pre-commit-config.yaml",
@@ -24,6 +26,16 @@ class RepoPolicyTests(unittest.TestCase):
             "pyrightconfig.json",
             "AGENTS.md",
             "README.md",
+            "docs/deployment/releases/IMAGE_PROMOTION.md",
+            "platform/argocd/core/upstream/install-v2.13.3.yaml",
+            "platform/argocd/apps/atlas-platform-staging.yaml",
+            "platform/k8s/overlays/staging/kustomization.yaml",
+            "scripts/gitops/bootstrap/apply-staging-app.sh",
+            "scripts/gitops/validate-overlays.sh",
+            "scripts/gitops/deploy/staging.sh",
+            "scripts/gitops/wait-app.sh",
+            "scripts/k3s/verify/smoke.sh",
+            "scripts/release/promote-by-digest.sh",
         ]
         for path in required:
             self.assertTrue((ROOT / path).exists(), f"Missing required file: {path}")
@@ -50,6 +62,32 @@ class RepoPolicyTests(unittest.TestCase):
             "docs-build",
         ):
             self.assertIn(task, tasks, f"Missing canonical mise task: {task}")
+
+    def test_mise_has_nonprod_delivery_tasks(self) -> None:
+        mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
+        tasks = mise_data.get("tasks", {})
+        for task in (
+            "k8s-deploy-dev",
+            "k8s-smoke",
+            "k8s-smoke-staging",
+            "gitops-apply-staging",
+            "gitops-deploy-staging",
+            "gitops-wait-staging",
+            "gitops-render-dev",
+            "gitops-render-staging",
+            "k8s-validate-overlays",
+        ):
+            self.assertIn(task, tasks, f"Missing non-production task: {task}")
+
+    def test_no_prod_operational_surface_remains(self) -> None:
+        for path in (
+            ".github/workflows/promote-prod.yml",
+            "platform/argocd/prod",
+            "platform/k8s/components/images/prod",
+            "platform/k8s/overlays/prod",
+            "scripts/gitops/bootstrap/apply-prod-apps.sh",
+        ):
+            self.assertFalse((ROOT / path).exists(), f"Unexpected prod artifact remains: {path}")
 
     def test_pre_commit_has_required_hooks(self) -> None:
         contents = (ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
@@ -81,6 +119,45 @@ class RepoPolicyTests(unittest.TestCase):
                     r"^[a-f0-9]{40}$",
                     f"Workflow action is not SHA pinned: {uses} in {workflow}",
                 )
+
+    def test_no_latest_tags_in_kubernetes_manifests(self) -> None:
+        manifests = (ROOT / "platform").glob("**/*.yaml")
+        offenders: list[str] = []
+        for manifest in manifests:
+            contents = manifest.read_text(encoding="utf-8")
+            if ":latest" in contents:
+                offenders.append(str(manifest.relative_to(ROOT)))
+
+        self.assertEqual(offenders, [], f"Found mutable latest tags in manifests: {offenders}")
+
+    def test_environment_overlays_exist(self) -> None:
+        for environment in ("dev", "staging"):
+            overlay = ROOT / "platform" / "k8s" / "overlays" / environment / "kustomization.yaml"
+            self.assertTrue(overlay.exists(), f"Missing overlay for environment: {environment}")
+
+    def test_image_components_exist(self) -> None:
+        for environment in ("dev", "staging"):
+            component = (
+                ROOT
+                / "platform"
+                / "k8s"
+                / "components"
+                / "images"
+                / environment
+                / "kustomization.yaml"
+            )
+            self.assertTrue(
+                component.exists(), f"Missing image component for environment: {environment}"
+            )
+
+    def test_staging_images_use_registry_references(self) -> None:
+        contents = (
+            ROOT / "platform" / "k8s" / "components" / "images" / "staging" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("ghcr.io/albersg/atlas-inventory-service", contents)
+        self.assertIn("ghcr.io/albersg/atlas-web", contents)
+        self.assertNotIn("newName: atlas-inventory-service", contents)
+        self.assertNotIn("newName: atlas-web", contents)
 
 
 if __name__ == "__main__":

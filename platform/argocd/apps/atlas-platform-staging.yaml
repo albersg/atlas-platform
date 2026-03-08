@@ -1,23 +1,29 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: atlas-platform-dev
+  name: atlas-platform-staging
   namespace: argocd
 spec:
   project: atlas-platform
   source:
     repoURL: git@github.com:albersg/agent-first-codex.git
     targetRevision: main
-    path: platform/k8s/overlays/dev
+    path: platform/k8s/overlays/staging
     plugin:
       name: ksops-kustomize
   destination:
     server: https://kubernetes.default.svc
-    namespace: atlas-platform-dev
+    namespace: atlas-platform-staging
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
     syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground

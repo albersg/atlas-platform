@@ -31,5 +31,46 @@ jobs:
       - name: Bootstrap
         run: mise run bootstrap
 
-      - name: Canonical CI path
-        run: mise run ci
+      - name: Formatting gate
+        run: mise run fmt-check
+
+      - name: Core validation
+        run: mise run check
+
+      - name: Documentation build
+        run: mise run docs-build
+
+      - name: Security checks
+        run: mise run security
+
+  gitops-validate:
+    needs: validate
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          install: true
+          cache: true
+
+      - name: Bootstrap
+        run: mise run bootstrap
+
+      - name: Materialize SOPS age key
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          test -n "$SOPS_AGE_KEY"
+          mkdir -p .gitops-local/age
+          printf '%s' "$SOPS_AGE_KEY" > .gitops-local/age/keys.txt
+          chmod 600 .gitops-local/age/keys.txt
+
+      - name: Validate encrypted overlays
+        run: mise run k8s-validate-overlays

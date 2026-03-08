@@ -1,287 +1,177 @@
-# Runbook de Despliegue en k3s
+# Runbook de despliegue en k3s
 
-Este documento describe un flujo completo, operativo y robusto para desplegar la plataforma en k3s.
+Este runbook cubre el uso de k3s como entorno no productivo para `dev` y `staging`.
 
-## 1. Alcance
+## Topología local
 
-El runbook cubre:
+- `platform/k8s/base`: manifiestos comunes de aplicación.
+- `platform/k8s/components/in-cluster-postgres`: PostgreSQL como `StatefulSet` con volumen persistente.
+- `platform/k8s/components/images/dev`: imágenes locales para `dev`.
+- `platform/k8s/components/images/staging`: imágenes de registry para `staging`, promocionadas por digest.
+- `platform/k8s/overlays/dev`: namespace `atlas-platform-dev`.
+- `platform/k8s/overlays/staging`: namespace `atlas-platform-staging`.
 
-- preparación del cluster,
-- build e import de imágenes locales,
-- despliegue de backend, frontend y base de datos,
-- ejecución de migraciones Alembic,
-- validación post-despliegue,
-- acceso al sistema,
-- operación diaria y troubleshooting.
-
-## 2. Componentes desplegados
-
-En `platform/k8s/base` se despliegan:
-
-- recursos namespaced comunes reutilizados por `dev` y `prod`.
-- `config/`: ConfigMaps y Secrets.
-- `data/`: almacenamiento persistente.
-- `workloads/`: Deployments y Jobs.
-- `networking/`: Services e Ingress.
-- `resilience/`: HPA y PDB.
-
-- `Namespace` dev: `atlas-platform-dev`.
-- `Namespace` prod: `atlas-platform-prod`.
-- `Secret` de PostgreSQL: `postgres-secret`.
-- `Secret` de backend: `inventory-secrets`.
-- `ConfigMap` de backend: `inventory-config`.
-- `PVC` de PostgreSQL: `postgres-pvc`.
-- `Deployment` PostgreSQL: `postgres`.
-- `Service` PostgreSQL: `postgres`.
-- `Job` de migración: `inventory-migration`.
-- `Deployment` backend: `inventory-service`.
-- `Service` backend: `inventory-service`.
-- `Deployment` frontend: `web`.
-- `Service` frontend: `web`.
-- `Ingress`: `atlas-ingress`.
-- `PDB`: `inventory-service-pdb`, `web-pdb`, `postgres-pdb`.
-- `HPA`: `inventory-service`, `web`.
-- `NetworkPolicy`: deny-by-default con reglas explícitas para DNS, web, API y PostgreSQL.
-
-Overlays:
-
-- `platform/k8s/overlays/dev`: entorno local con imágenes `atlas-*:dev`.
-- `platform/k8s/overlays/prod`: entorno productivo (hosts de ejemplo).
-
-## 3. Prerrequisitos
-
-## 3.1 Herramientas
+## Prerrequisitos
 
 - `mise`
 - `kubectl`
 - `docker`
 - `k3s`
+- cluster accesible con `kubectl`
+- `IngressClass` activa (Traefik por defecto)
+- `metrics-server` recomendado para HPA
+- para `staging`: imágenes ya publicadas en GHCR y bootstrap GitOps completado en `argocd`
 
-Nota: `mise` gestiona el flujo del repo; `kubectl/docker/k3s` dependen del host.
-
-## 3.2 Cluster
-
-- k3s levantado y accesible con `kubectl`.
-- Ingress controller disponible (por defecto, Traefik en k3s).
-- Recomendado: `metrics-server` activo para HPA por CPU.
-
-## 4. Flujo de despliegue dev (recomendado)
-
-## 4.1 Preparar entorno de trabajo
+## Flujo recomendado para dev
 
 ```bash
 mise install
 mise run bootstrap
 mise run app-bootstrap
-```
-
-## 4.2 Verificar cluster
-
-```bash
 mise run k8s-preflight
-```
-
-Valida:
-
-- conectividad del cluster,
-- presencia de `IngressClass traefik`,
-- presencia de `metrics-server`.
-
-## 4.3 Construir imágenes locales
-
-```bash
 mise run k8s-build-images
-```
-
-Tags generados:
-
-- `atlas-inventory-service:dev`
-- `atlas-web:dev`
-
-## 4.4 Importar imágenes a k3s
-
-```bash
 mise run k8s-import-images
+mise run k8s-deploy-dev
+mise run k8s-status
+mise run k8s-access
 ```
 
-Este paso exporta con `docker save` e importa con `sudo k3s ctr images import`.
+`mise run k8s-build-images` genera tags locales únicos por ejecución y escribe el
+estado en `.gitops-local/k3s/dev-images.env`. Los pasos de importación y despliegue
+leen ese archivo para evitar que k3s reutilice una imagen vieja con un tag estático.
 
-## 4.5 Desplegar overlay dev
+Qué hace `mise run k8s-deploy-dev`:
+
+1. ejecuta preflight,
+2. limpia el job de migración previo,
+3. elimina el `Deployment` legado de PostgreSQL si aún existe,
+4. aplica el overlay renderizado con KSOPS y las imágenes locales del build activo,
+5. fuerza recreación del pod de PostgreSQL para aplicar cambios del `StatefulSet`,
+6. espera a PostgreSQL,
+7. recrea el job Alembic,
+8. espera backend y frontend,
+9. ejecuta smoke checks contra API, frontend e Ingress.
+
+## Flujo recomendado para staging
+
+`staging` ya no es un overlay de `kubectl apply` directo. Su camino operativo es GitOps + registry:
 
 ```bash
-mise run k8s-deploy-dev
+mise run gitops-bootstrap-core
+mise run gitops-install-age-key
+mise run gitops-install-repo-credential
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+mise run k8s-status-staging
+mise run k8s-access-staging
 ```
 
-Este comando:
+`staging` permite validar el artefacto publicado, la reconciliación de Argo CD, el render KSOPS y la topología preproductiva en el cluster local.
 
-1. valida preflight,
-2. elimina job anterior de migración,
-3. aplica `platform/k8s/overlays/dev`,
-4. espera rollout de PostgreSQL,
-5. espera finalización del job Alembic,
-6. espera rollout de backend y frontend.
+## Smoke checks
 
-## 5. Acceso tras desplegar
+```bash
+mise run k8s-smoke
+mise run k8s-smoke-staging
+```
 
-## 5.1 Hostnames
+Los smoke checks validan localmente:
 
-Obtén ayuda automática:
+- `/readyz` del backend,
+- `GET /api/v1/inventory/products`,
+- respuesta HTTP del frontend,
+- reachability por Ingress con los hostnames del entorno,
+- finalización correcta del job de migración.
+
+## Acceso
+
+### Dev
 
 ```bash
 mise run k8s-access
 ```
 
-El comando muestra:
+Hosts esperados:
 
-- IP del nodo,
-- línea sugerida para `/etc/hosts`,
-- URLs objetivo.
+- `atlas.local`
+- `api.atlas.local`
 
-Entradas típicas:
-
-```text
-<NODE_IP> atlas.local api.atlas.local
-```
-
-## 5.2 URLs
-
-- Frontend: `http://atlas.local`
-- API docs: `http://api.atlas.local/docs`
-- Health API: `http://api.atlas.local/healthz`
-
-## 5.3 Fallback con port-forward
-
-Si Ingress no está disponible:
+### Staging
 
 ```bash
-kubectl -n atlas-platform-dev port-forward svc/web 8080:80
-kubectl -n atlas-platform-dev port-forward svc/inventory-service 8000:8000
+mise run k8s-access-staging
 ```
 
-Accesos fallback:
+Hosts esperados:
 
-- Frontend: `http://localhost:8080`
-- API docs: `http://localhost:8000/docs`
+- `staging.atlas.example.com`
+- `api.staging.atlas.example.com`
 
-## 6. Seguridad y hardening aplicados
+`staging` usa HTTPS con el entrypoint `websecure` de Traefik. En k3s local se valida contra el certificado por defecto del ingress controller.
 
-- Namespace con labels de Pod Security `baseline`.
-- Secrets separados para DB y backend.
-- Alembic fuera del startup path principal mediante `Job` dedicado.
-- `RUN_MIGRATIONS_ON_STARTUP=0` en despliegue k8s.
-- Probes (`startup`, `readiness`, `liveness`) en backend y frontend.
-- Requests/limits en backend, frontend, job y PostgreSQL.
-- `allowPrivilegeEscalation: false` y `capabilities.drop: [ALL]` en workloads de app.
-- `seccompProfile: RuntimeDefault` en workloads de app y PostgreSQL.
-- `automountServiceAccountToken: false` en deployments y job.
-- PDB para backend/frontend/PostgreSQL.
-- HPA para backend/frontend.
-- NetworkPolicies para reducir tráfico lateral y permitir solo flujos necesarios.
+## Logs y operación diaria
 
-## 7. Operación diaria
-
-## 7.1 Estado y salud
+### Estado
 
 ```bash
 mise run k8s-status
+mise run k8s-status-staging
 kubectl -n atlas-platform-dev get events --sort-by=.lastTimestamp
+kubectl -n atlas-platform-staging get events --sort-by=.lastTimestamp
 ```
 
-## 7.2 Logs
+### Logs
 
 ```bash
 kubectl -n atlas-platform-dev logs deploy/inventory-service --tail=200 -f
 kubectl -n atlas-platform-dev logs deploy/web --tail=200 -f
-kubectl -n atlas-platform-dev logs deploy/postgres --tail=200 -f
+kubectl -n atlas-platform-dev logs statefulset/postgres --tail=200 -f
 kubectl -n atlas-platform-dev logs job/inventory-migration --tail=200
 ```
 
-## 7.3 Re-ejecutar migraciones
+```bash
+kubectl -n atlas-platform-staging logs deploy/inventory-service --tail=200 -f
+kubectl -n atlas-platform-staging logs deploy/web --tail=200 -f
+kubectl -n atlas-platform-staging logs statefulset/postgres --tail=200 -f
+kubectl -n atlas-platform-staging logs job/inventory-migration --tail=200
+```
+
+### Re-ejecutar migraciones
 
 ```bash
 kubectl -n atlas-platform-dev delete job inventory-migration --ignore-not-found
-kubectl apply -k platform/k8s/overlays/dev
+./scripts/gitops/render-overlay.sh platform/k8s/overlays/dev | kubectl apply -f -
 kubectl -n atlas-platform-dev wait --for=condition=complete job/inventory-migration --timeout=300s
 ```
 
-## 7.4 Eliminar entorno dev
+## Eliminación de entornos
 
 ```bash
 mise run k8s-delete-dev
+mise run k8s-delete-staging
 ```
 
-## 8. Paso a producción
+`k8s-delete-staging` se mantiene como limpieza local de namespace. El despliegue normal de `staging` sigue siendo GitOps.
 
-## 8.1 Overlay prod
+## Alcance
 
-Base:
+Este runbook endurece el flujo no productivo de `dev` y `staging`. Producción queda fuera del alcance operativo actual del repositorio.
 
-- `platform/k8s/overlays/prod/kustomization.yaml`
+## Troubleshooting rápido
 
-Ajustes mínimos antes de usarlo:
+### PostgreSQL no arranca
 
-1. actualizar hosts reales del Ingress,
-2. usar imágenes de registry real (no tags `dev`),
-3. rotar secretos con valores reales,
-4. revisar requests/limits según carga,
-5. activar TLS con `cert-manager` (recomendado).
+- revisa `kubectl -n <ns> logs statefulset/postgres`,
+- valida permisos del volumen y provisión del PVC,
+- confirma secreto `postgres-secret`.
 
-## 8.2 Flujo sugerido prod
+### Job de migración no termina
 
-1. Build/push imágenes versionadas (`x.y.z` o SHA).
-2. Parchar tags en overlay prod.
-3. Aplicar overlay prod.
-4. Esperar migración + rollout.
-5. Ejecutar checks de humo (`/healthz`, `/docs`, flujo UI).
+- revisa `kubectl -n <ns> logs job/inventory-migration`,
+- confirma `INVENTORY_DATABASE_URL`,
+- confirma conectividad a `postgres:5432`.
 
-## 9. Gestión de secretos
+### Tráfico bloqueado
 
-En base se incluyen placeholders para demo.
-
-Antes de producción:
-
-- reemplaza `change-me-in-prod` por secretos reales,
-- idealmente migra a gestor externo (External Secrets, Vault, SOPS, Sealed Secrets),
-- evita secretos en texto plano en git.
-
-## 10. Troubleshooting rápido
-
-## 10.1 Pod en CrashLoopBackOff
-
-- revisa logs del workload,
-- revisa disponibilidad de PostgreSQL,
-- revisa valor de `INVENTORY_DATABASE_URL`.
-
-## 10.2 Job de migración no completa
-
-- `kubectl -n atlas-platform-dev logs job/inventory-migration`
-- comprobar credenciales y conectividad a `postgres:5432`.
-
-## 10.3 Ingress sin respuesta
-
-- verificar `IngressClass` activa,
-- verificar host en `/etc/hosts`,
-- fallback con `port-forward`.
-
-## 10.4 HPA sin escalar
-
-- comprobar `metrics-server` en `kube-system`,
-- comprobar requests CPU definidos en deployments.
-
-## 10.5 Tráfico bloqueado entre pods
-
-- revisar NetworkPolicies activas: `kubectl -n atlas-platform get networkpolicy`,
-- validar reglas DNS/CoreDNS (`kube-system`, `k8s-app=kube-dns`),
-- confirmar que backend puede llegar a `postgres:5432`.
-
-## 11. Comandos de referencia
-
-```bash
-mise run k8s-preflight
-mise run k8s-build-images
-mise run k8s-import-images
-mise run k8s-deploy-dev
-mise run k8s-status
-mise run k8s-access
-mise run k8s-delete-dev
-```
+- revisa NetworkPolicies activas,
+- confirma política DNS,
+- confirma reglas hacia PostgreSQL.
