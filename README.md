@@ -251,12 +251,25 @@ Despliegue de `staging` vía Argo CD sobre una revisión ya empujada:
 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 ```
 
+Por defecto, `mise run gitops-deploy-staging` construye e importa imágenes locales con
+las refs `ghcr.io/...:main` y apunta Argo CD al wrapper `platform/k8s/overlays/staging-local`,
+que mantiene la topología GitOps de `staging` pero usa `imagePullPolicy: IfNotPresent`
+para no depender de que GHCR tenga esas tags publicadas en el cluster local.
+
+Si quieres forzar el camino registry-first del overlay canónico de `staging`:
+
+```bash
+STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
+
 Requisitos para `staging`:
 
-- imágenes publicadas en GHCR,
 - Argo CD instalado,
 - credencial del repo instalada en `argocd`,
 - clave `age` de SOPS instalada en `argocd`.
+
+En modo local por defecto no necesitas que `ghcr.io/...:main` exista en remoto; el helper
+de `staging` la construye e importa en k3s antes de sincronizar Argo CD.
 
 Smoke checks independientes:
 

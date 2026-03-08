@@ -7,8 +7,9 @@ set -euo pipefail
 CONTAINER_CLI="${CONTAINER_CLI:-docker}"
 MAX_TRIES="${MAX_TRIES:-4}"
 IMAGE_TAG="${IMAGE_TAG:-dev-$(date +%Y%m%d%H%M%S)}"
-BACKEND_IMAGE="atlas-inventory-service:${IMAGE_TAG}"
-WEB_IMAGE="atlas-web:${IMAGE_TAG}"
+BACKEND_IMAGE="${ATLAS_BACKEND_IMAGE:-atlas-inventory-service:${IMAGE_TAG}}"
+WEB_IMAGE="${ATLAS_WEB_IMAGE:-atlas-web:${IMAGE_TAG}}"
+WRITE_K3S_IMAGE_STATE="${WRITE_K3S_IMAGE_STATE:-1}"
 
 if ! command -v "${CONTAINER_CLI}" >/dev/null 2>&1; then
   echo "${CONTAINER_CLI} no esta instalado o no esta en PATH" >&2
@@ -57,12 +58,15 @@ retry "Build frontend" "${CONTAINER_CLI}" build \
   -f apps/web/Dockerfile \
   apps/web
 
-ensure_k3s_image_state_dir
-cat >"${K3S_IMAGE_STATE_FILE}" <<EOF
+echo "Imagenes locales listas: ${BACKEND_IMAGE} y ${WEB_IMAGE}"
+
+if [ "${WRITE_K3S_IMAGE_STATE}" = "1" ]; then
+  ensure_k3s_image_state_dir
+  cat >"${K3S_IMAGE_STATE_FILE}" <<EOF
 ATLAS_IMAGE_TAG=${IMAGE_TAG}
 ATLAS_BACKEND_IMAGE=${BACKEND_IMAGE}
 ATLAS_WEB_IMAGE=${WEB_IMAGE}
 EOF
 
-echo "Imagenes locales listas: ${BACKEND_IMAGE} y ${WEB_IMAGE}"
-echo "Estado guardado en ${K3S_IMAGE_STATE_FILE}"
+  echo "Estado guardado en ${K3S_IMAGE_STATE_FILE}"
+fi

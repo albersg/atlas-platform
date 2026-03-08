@@ -1,0 +1,69 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: atlas-platform-staging
+
+resources:
+  - namespace.yaml
+  - limitrange.yaml
+  - resourcequota.yaml
+  - ../../base
+  - ../../components/in-cluster-postgres
+
+generators:
+  - ksops-generator.yaml
+
+components:
+  - ../../components/images/staging
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: inventory-config
+    patch: |-
+      - op: replace
+        path: /data/INVENTORY_APP_ENV
+        value: staging
+  - target:
+      kind: Deployment
+      name: inventory-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Deployment
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Job
+      name: inventory-migration
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Ingress
+      name: atlas-ingress
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
+        value: websecure
+      - op: add
+        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.tls
+        value: "true"
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.atlas.example.com
+      - op: replace
+        path: /spec/rules/1/host
+        value: api.staging.atlas.example.com
+      - op: add
+        path: /spec/tls
+        value:
+          - hosts:
+              - staging.atlas.example.com
+              - api.staging.atlas.example.com

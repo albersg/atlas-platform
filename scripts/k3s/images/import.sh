@@ -8,7 +8,9 @@ CONTAINER_CLI="${CONTAINER_CLI:-docker}"
 HELPER_NAMESPACE="${HELPER_NAMESPACE:-default}"
 HELPER_POD_NAME="${HELPER_POD_NAME:-atlas-image-import-helper}"
 
-load_k3s_dev_images
+if [ -z "${ATLAS_BACKEND_IMAGE:-}" ] || [ -z "${ATLAS_WEB_IMAGE:-}" ]; then
+  load_k3s_dev_images
+fi
 
 if ! command -v "${CONTAINER_CLI}" >/dev/null 2>&1; then
   echo "${CONTAINER_CLI} no esta instalado o no esta en PATH" >&2

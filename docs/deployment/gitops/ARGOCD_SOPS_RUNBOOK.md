@@ -75,6 +75,18 @@ Para esperar sincronización y verificar `staging` de extremo a extremo:
 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 ```
 
+En un cluster k3s local, ese commando construye e importa por defecto imágenes locales con las
+refs `ghcr.io/...:main` y parchea temporalmente la Application para usar
+`platform/k8s/overlays/staging-local`. Ese wrapper conserva el render KSOPS y el flujo Argo CD,
+pero evita depender de que GHCR tenga publicadas las tags `:main` durante la validación local.
+
+Para probar el overlay canónico `platform/k8s/overlays/staging` contra imágenes realmente
+publicadas en registry:
+
+```bash
+STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
+
 ## Validación local antes de sincronizar
 
 ```bash
