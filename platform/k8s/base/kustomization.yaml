@@ -2,26 +2,27 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - namespace.yaml
-  - postgres-secret.yaml
-  - inventory-secrets.yaml
-  - inventory-config.yaml
-  - postgres-pvc.yaml
-  - postgres-deployment.yaml
-  - postgres-service.yaml
+  - namespace/namespace.yaml
+  - config/postgres-secret.yaml
+  - config/inventory-secrets.yaml
+  - config/inventory-config.yaml
+  - data/postgres-pvc.yaml
+  - workloads/postgres-deployment.yaml
+  - networking/postgres-service.yaml
+  - workloads/inventory-migration-job.yaml
+  - workloads/inventory-service-deployment.yaml
+  - networking/inventory-service-service.yaml
   - postgres-pdb.yaml
-  - inventory-migration-job.yaml
-  - inventory-service-deployment.yaml
-  - inventory-service-service.yaml
-  - inventory-service-pdb.yaml
-  - inventory-service-hpa.yaml
-  - web-deployment.yaml
-  - web-service.yaml
-  - web-pdb.yaml
-  - web-hpa.yaml
+  - resilience/inventory-service-pdb.yaml
+  - resilience/inventory-service-hpa.yaml
+  - workloads/web-deployment.yaml
+  - networking/web-service.yaml
+  - resilience/web-pdb.yaml
+  - resilience/web-hpa.yaml
   - networkpolicy-default-deny.yaml
   - networkpolicy-allow-dns-egress.yaml
   - networkpolicy-web.yaml
   - networkpolicy-inventory-service.yaml
+  - networkpolicy-inventory-migration.yaml
   - networkpolicy-postgres.yaml
-  - ingress.yaml
+  - networking/ingress.yaml
