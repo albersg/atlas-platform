@@ -1,6 +1,6 @@
 site_name: Atlas Platform
 site_description: Atlas platform developer documentation
-repo_url: https://github.com/albersg/agent-first-codex
+repo_url: https://github.com/albersg/atlas-platform
 theme:
   name: material
   features:

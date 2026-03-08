@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-ARGOCD_REPO_SECRET_NAME="${ARGOCD_REPO_SECRET_NAME:-argocd-repo-agent-first-codex}"
+ARGOCD_REPO_SECRET_NAME="${ARGOCD_REPO_SECRET_NAME:-argocd-repo-atlas-platform}"
 STAGING_LOCAL_IMAGES="${STAGING_LOCAL_IMAGES:-1}"
 
 if [[ "$STAGING_LOCAL_IMAGES" = "1" ]]; then
