@@ -15,6 +15,7 @@ url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_
 [tools.actionlint."platforms.linux-x64"]
 checksum = "sha256:900919a84f2229bac68ca9cd4103ea297abc35e9689ebb842c6e34a3d1b01b0a"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_amd64.tar.gz"
+provenance = "github-attestations"
 
 [tools.actionlint."platforms.linux-x64-musl"]
 checksum = "sha256:900919a84f2229bac68ca9cd4103ea297abc35e9689ebb842c6e34a3d1b01b0a"
@@ -139,6 +140,7 @@ url = "https://github.com/astral-sh/ruff/releases/download/0.15.5/ruff-aarch64-u
 [tools.ruff."platforms.linux-x64"]
 checksum = "sha256:da9b5c8ba7a789fe3bcf6287ea58ccbac9328a711b7674681706106e7580a836"
 url = "https://github.com/astral-sh/ruff/releases/download/0.15.5/ruff-x86_64-unknown-linux-musl.tar.gz"
+provenance = "github-attestations"
 
 [tools.ruff."platforms.linux-x64-musl"]
 checksum = "sha256:da9b5c8ba7a789fe3bcf6287ea58ccbac9328a711b7674681706106e7580a836"
@@ -235,6 +237,7 @@ url = "https://github.com/astral-sh/uv/releases/download/0.10.8/uv-aarch64-unkno
 [tools.uv."platforms.linux-x64"]
 checksum = "sha256:a4e6ad1aecac61077de548d2cc9ccf2c2f1848863312b3b59fb0d2eb8d8a043c"
 url = "https://github.com/astral-sh/uv/releases/download/0.10.8/uv-x86_64-unknown-linux-musl.tar.gz"
+provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
 checksum = "sha256:a4e6ad1aecac61077de548d2cc9ccf2c2f1848863312b3b59fb0d2eb8d8a043c"
