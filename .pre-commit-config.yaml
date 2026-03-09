@@ -56,7 +56,7 @@ repos:
         exclude: ^(platform/argocd/core/upstream/install-v2\.13\.3\.yaml|platform/k8s/overlays/.*/secrets/.*\.enc\.yaml)$
 
   - repo: https://github.com/crate-ci/typos
-    rev: a8d8e187146634c459c27ade2d3e338569378720 # frozen: v1.44.0 # pragma: allowlist secret
+    rev: v1
     hooks:
       - id: typos
         exclude: ^\.sops\.yaml$
@@ -80,7 +80,7 @@ repos:
         args: [--verbose]
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.22.0
+    rev: v1.23.1
     hooks:
       - id: zizmor
         stages: [manual]
