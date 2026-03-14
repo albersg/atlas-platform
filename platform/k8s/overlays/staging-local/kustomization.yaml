@@ -14,7 +14,7 @@ generators:
   - ksops-generator.yaml
 
 components:
-  - ../../components/images/staging
+  - ../../components/images/staging-local
 
 patches:
   - target:

@@ -9,7 +9,8 @@ Esta seccion organiza el modelo operativo actual del repositorio para `local`,
 | --- | --- | --- |
 | Local | Desarrollo rapido de app | Docker Compose o procesos locales |
 | `dev` | Laboratorio k3s local | k3s + imagenes locales + overlays |
-| `staging` | Validacion GitOps preproductiva | Argo CD + SOPS + registry |
+| `staging` | Validacion GitOps preproductiva canonica | Argo CD + SOPS + registry + digests |
+| `staging-local` | Wrapper local de aprendizaje para staging | Argo CD + SOPS + imagenes locales `:main` |
 
 ## Flujo recomendado para `dev`
 
@@ -47,12 +48,16 @@ mise run k8s-access-staging
 
 En local, `mise run gitops-deploy-staging` construye e importa por defecto imagenes
 con refs `ghcr.io/...:main` y sincroniza Argo CD contra `platform/k8s/overlays/staging-local`.
-Ese wrapper mantiene la topologia GitOps de `staging`, pero evita depender de que
-GHCR tenga esas tags publicadas cuando validas en tu cluster local.
+Ese wrapper mantiene la topologia GitOps de `staging`, pero deja claro que la fuente
+de verdad canonica sigue siendo `platform/k8s/overlays/staging` con imagenes por digest.
+El camino canonico tambien exige que esos digests tengan firma Cosign verificable desde
+`Release Images` en GitHub Actions.
 
 Si necesitas probar el camino registry-first del overlay canonico:
 
 ```bash
+mise run k8s-doctor
+mise run k8s-validate-overlays
 STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 ```
 
@@ -83,8 +88,25 @@ Elimination de overlays:
 
 ```bash
 mise run k8s-delete-dev
-mise run k8s-delete-staging
+ATLAS_CONFIRM_STAGING_DELETE=atlas-platform-staging mise run k8s-delete-staging
 ```
+
+`k8s-delete-staging` elimina primero la Application de Argo CD sin cascada para frenar
+`self-heal`, muestra los recursos afectados y preserva por defecto el `Namespace`
+`atlas-platform-staging` junto con los PVC de PostgreSQL. Usa `PRESERVE_POSTGRES_PVC=0`
+solo si tambien quieres borrar almacenamiento y namespace.
+
+Backup y restore de PostgreSQL no productivo:
+
+```bash
+mise run k8s-backup-postgres-staging
+BACKUP_FILE=.gitops-local/backups/staging/<timestamp>.dump \
+ATLAS_CONFIRM_POSTGRES_RESTORE=atlas-platform-staging \
+mise run k8s-restore-postgres-staging
+```
+
+El restore es destruction por definition: exige confirmation explicita, valida que el dump
+exista y re-ejecuta migraciones + smoke checks antes de informar exito.
 
 ## Runbooks detallados
 

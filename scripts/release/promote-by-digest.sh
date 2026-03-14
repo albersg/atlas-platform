@@ -67,4 +67,6 @@ images:
 )
 PY
 
+"$ROOT_DIR/scripts/release/verify-trusted-images.sh" "$TARGET_FILE"
+
 echo "Actualizado ${TARGET_FILE} con digests inmutables para ${ENVIRONMENT}."

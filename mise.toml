@@ -11,10 +11,11 @@ shellcheck = "0.11.0"
 shfmt = "3.12.0"
 
 [tasks.doctor]
-description = "Show mise environment diagnostics"
+description = "Show mise diagnostics plus repository Kubernetes readiness"
 run = [
   "mise doctor",
-  "mise tasks validate"
+  "mise tasks validate",
+  "./scripts/k3s/cluster/doctor.sh"
 ]
 
 [tasks.bootstrap]
@@ -145,6 +146,18 @@ run = "docker compose logs -f --tail=200"
 description = "Validate k3s prerequisites and cluster capabilities"
 run = "./scripts/k3s/cluster/preflight.sh"
 
+[tasks.k8s-doctor]
+description = "Check repository-specific Kubernetes and GitOps readiness"
+run = "./scripts/k3s/cluster/doctor.sh"
+
+[tasks.k8s-backup-postgres-staging]
+description = "Create a timestamped staging PostgreSQL backup with restore hint"
+run = "ATLAS_POSTGRES_ENV=staging ./scripts/k3s/postgres/backup.sh"
+
+[tasks.k8s-restore-postgres-staging]
+description = "Restore staging PostgreSQL from BACKUP_FILE with explicit confirmation"
+run = "ATLAS_POSTGRES_ENV=staging ./scripts/k3s/postgres/restore.sh"
+
 [tasks.k8s-build-images]
 description = "Build local backend/frontend images for k3s dev overlay"
 run = "./scripts/k3s/images/build.sh"
@@ -194,8 +207,8 @@ description = "Delete dev overlay resources from k3s"
 run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/dev | kubectl delete -f - --ignore-not-found"
 
 [tasks.k8s-delete-staging]
-description = "Delete staging overlay resources from k3s"
-run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/staging | kubectl delete -f - --ignore-not-found"
+description = "Safely tear down GitOps-managed staging with explicit confirmation"
+run = "./scripts/gitops/delete-staging.sh"
 
 [tasks.gitops-install-tools]
 description = "Install local Argo CD, SOPS, age, and kustomize helper binaries"
@@ -238,11 +251,11 @@ description = "Render the encrypted staging overlay locally via KSOPS"
 run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/staging"
 
 [tasks.k8s-validate-overlays]
-description = "Render dev and staging overlays and validate them"
+description = "Render non-production overlays and apply shared plus staging-only policies"
 run = "./scripts/gitops/validate-overlays.sh"
 
 [tasks.policy-check]
-description = "Run policy validation against rendered dev and staging overlays"
+description = "Run overlay-aware policy validation for dev, staging, and staging-local"
 run = "./scripts/gitops/validate-overlays.sh"
 
 [tasks.check]

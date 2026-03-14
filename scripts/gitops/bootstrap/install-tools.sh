@@ -14,6 +14,10 @@ KUSTOMIZE_VERSION="v5.4.3"
 KUSTOMIZE_SHA256="3669470b454d865c8184d6bce78df05e977c9aea31c30df3c669317d43bcc7a7" # pragma: allowlist secret
 KSOPS_VERSION="v4.4.0"
 KSOPS_SHA256="72973ce5a97d7ad0318c9f6ae4df2aa94a4a564c45fdf71772b759dff4df0cb4" # pragma: allowlist secret
+KYVERNO_VERSION="v1.15.0"
+KYVERNO_SHA256="d5173342a6e3500f3fb1b9232ecaa8138b07663fd37c9aaa665c1d5cd2368a2b" # pragma: allowlist secret
+COSIGN_VERSION="v2.4.3"
+COSIGN_SHA256="caaad125acef1cb81d58dcdc454a1e429d09a750d1e9e2b3ed1aed8964454708" # pragma: allowlist secret
 
 mkdir -p "$TOOLS_DIR" "$PLUGIN_DIR"
 
@@ -85,6 +89,8 @@ download "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops
 download "https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64" "$TOOLS_DIR/argocd" "$ARGOCD_SHA256"
 download_archive_binary "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" "kustomize" "$TOOLS_DIR/kustomize" "$KUSTOMIZE_SHA256"
 download_archive_binary "https://github.com/viaduct-ai/kustomize-sops/releases/download/${KSOPS_VERSION}/ksops_${KSOPS_VERSION#v}_Linux_x86_64.tar.gz" "ksops" "$TOOLS_DIR/ksops" "$KSOPS_SHA256"
+download_archive_binary "https://github.com/kyverno/kyverno/releases/download/${KYVERNO_VERSION}/kyverno-cli_${KYVERNO_VERSION}_linux_x86_64.tar.gz" "kyverno" "$TOOLS_DIR/kyverno" "$KYVERNO_SHA256"
+download "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" "$TOOLS_DIR/cosign" "$COSIGN_SHA256"
 
 ln -sf "$TOOLS_DIR/ksops" "$PLUGIN_DIR/ksops"
 
