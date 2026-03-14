@@ -4,7 +4,7 @@ kind: Component
 images:
   - name: ghcr.io/albersg/atlas-inventory-service
     newName: ghcr.io/albersg/atlas-inventory-service
-    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    digest: sha256:b907728430ff544d465bedb5f75a0799fc342564c1d23eb279871f6328e2a98b
   - name: ghcr.io/albersg/atlas-web
     newName: ghcr.io/albersg/atlas-web
-    digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    digest: sha256:f1207560ef954e8d3585c7f81df16c0b28736c43432cec4dd3528996c514dba8
