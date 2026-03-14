@@ -8,16 +8,22 @@ STAGING_LOCAL_IMAGES="${STAGING_LOCAL_IMAGES:-1}"
 if [[ "$STAGING_LOCAL_IMAGES" = "1" ]]; then
   : "${ARGOCD_APP_PATH:=platform/k8s/overlays/staging-local}"
 
+  echo "Modo staging-local: wrapper local con tags mutables solo para aprendizaje y validacion en k3s."
   echo "Preparando imagenes locales para staging..."
   "$ROOT_DIR/scripts/k3s/images/build-staging.sh"
   "$ROOT_DIR/scripts/k3s/images/import-staging.sh"
 else
   : "${ARGOCD_APP_PATH:=platform/k8s/overlays/staging}"
+  echo "Modo staging canonico: overlay GitOps con imagenes inmutables por digest desde registry."
 fi
 
 export ARGOCD_APP_PATH
 
-"$ROOT_DIR/scripts/k3s/cluster/preflight.sh"
+ATLAS_DOCTOR_SCOPE=staging "$ROOT_DIR/scripts/k3s/cluster/doctor.sh"
+
+if [[ "$STAGING_LOCAL_IMAGES" != "1" ]]; then
+  "$ROOT_DIR/scripts/release/verify-trusted-images.sh"
+fi
 
 if ! kubectl -n argocd get deployment argocd-server >/dev/null 2>&1; then
   echo "Argo CD no parece instalado. Ejecuta primero: mise run gitops-bootstrap-core" >&2

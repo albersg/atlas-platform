@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: __JOB_NAME__
+  namespace: __NAMESPACE__
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: __JOB_NAME__
+        atlas-postgres-access: "true"
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres-backup
+          image: __POSTGRES_IMAGE__
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - pg_dump -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f "$BACKUP_PATH"
+          env:
+            - name: POSTGRES_HOST
+              value: __POSTGRES_HOST__
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: __POSTGRES_SECRET_NAME__
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: __POSTGRES_SECRET_NAME__
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: __POSTGRES_SECRET_NAME__
+                  key: POSTGRES_PASSWORD
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: __POSTGRES_SECRET_NAME__
+                  key: POSTGRES_PASSWORD
+            - name: BACKUP_PATH
+              value: __BACKUP_PATH__
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: backup-data
+              mountPath: /backup
+      volumes:
+        - name: backup-data
+          emptyDir: {}

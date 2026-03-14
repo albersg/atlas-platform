@@ -16,6 +16,9 @@ spec:
         - podSelector:
             matchLabels:
               app: inventory-migration
+        - podSelector:
+            matchLabels:
+              atlas-postgres-access: "true"
       ports:
         - protocol: TCP
           port: 5432

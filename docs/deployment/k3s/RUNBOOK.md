@@ -7,9 +7,11 @@ Este runbook cubre el uso de k3s como entorno no productivo para `dev` y `stagin
 - `platform/k8s/base`: manifiestos comunes de aplicación.
 - `platform/k8s/components/in-cluster-postgres`: PostgreSQL como `StatefulSet` con volumen persistente.
 - `platform/k8s/components/images/dev`: imágenes locales para `dev`.
-- `platform/k8s/components/images/staging`: imágenes de registry para `staging`, promocionadas por digest.
+- `platform/k8s/components/images/staging`: imágenes canónicas de registry para `staging`, promocionadas por digest.
+- `platform/k8s/components/images/staging-local`: excepción local con tags mutables `:main` solo para aprendizaje.
 - `platform/k8s/overlays/dev`: namespace `atlas-platform-dev`.
 - `platform/k8s/overlays/staging`: namespace `atlas-platform-staging`.
+- `platform/k8s/overlays/staging-local`: wrapper local del flujo GitOps de `staging`.
 
 ## Prerrequisitos
 
@@ -57,6 +59,8 @@ Qué hace `mise run k8s-deploy-dev`:
 `staging` ya no es un overlay de `kubectl apply` directo. Su camino operativo es GitOps + registry:
 
 ```bash
+mise run k8s-doctor
+mise run k8s-validate-overlays
 mise run gitops-bootstrap-core
 mise run gitops-install-age-key
 mise run gitops-install-repo-credential
@@ -72,6 +76,8 @@ En local, `mise run gitops-deploy-staging` hace dos cosas adicionales por defect
 
 Ese wrapper mantiene el modelo GitOps de `staging`, pero usa `imagePullPolicy: IfNotPresent`
 para que el cluster local pueda arrancar aunque GHCR todavía no tenga publicadas las tags `:main`.
+La política endurecida solo aplica al overlay canónico `staging`; `staging-local` existe para no
+debilitar el contrato inmutable del camino real de promoción.
 
 Si quieres probar exactamente el camino registry-first del overlay canónico:
 
@@ -80,6 +86,55 @@ STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gi
 ```
 
 `staging` permite validar la reconciliación de Argo CD, el render KSOPS y la topología preproductiva en el cluster local sin mezclarlo con el flujo `dev`.
+El path canónico además exige imágenes firmadas: `mise run k8s-validate-overlays` y la promoción
+por digest validan Cosign contra `Release Images` en `main`.
+
+## Doctor endurecido
+
+```bash
+mise run k8s-doctor
+ATLAS_DOCTOR_SCOPE=dev mise run k8s-doctor
+```
+
+El doctor ahora falla si faltan prerrequisitos del staging endurecido (Argo CD, age key,
+credential del repo, helpers GitOps, render o bundles de política). Para un chequeo local mas
+liviano de laboratorio, usa `ATLAS_DOCTOR_SCOPE=dev`.
+
+## Backup y restore de PostgreSQL
+
+Backup:
+
+```bash
+mise run k8s-backup-postgres-staging
+```
+
+El comando crea un dump `pg_dump -Fc` con timestamp en `.gitops-local/backups/staging/` y te
+imprime el comando exacto de restore. Los Jobs efimeros de backup/restore usan la etiqueta
+`atlas-postgres-access=true`, que debe permanecer permitida por las `NetworkPolicy` del componente.
+
+Para validar el flujo sin lanzar un dump real:
+
+```bash
+ATLAS_POSTGRES_DRY_RUN=1 mise run k8s-backup-postgres-staging
+```
+
+Restore:
+
+```bash
+BACKUP_FILE=.gitops-local/backups/staging/<timestamp>.dump \
+ATLAS_CONFIRM_POSTGRES_RESTORE=atlas-platform-staging \
+mise run k8s-restore-postgres-staging
+```
+
+Guardrails del restore:
+
+1. exige `BACKUP_FILE` existente,
+2. exige el token exacto `ATLAS_CONFIRM_POSTGRES_RESTORE=atlas-platform-staging`,
+3. carga el dump en un Job efimero,
+4. re-renderiza/aplica el overlay del entorno,
+5. espera `inventory-migration` y corre smoke checks antes de reportar exito.
+
+Usa `ATLAS_POSTGRES_DRY_RUN=1` si quieres inspeccionar los pasos sin tocar el cluster.
 
 ## Smoke checks
 
@@ -161,10 +216,13 @@ kubectl -n atlas-platform-dev wait --for=condition=complete job/inventory-migrat
 
 ```bash
 mise run k8s-delete-dev
-mise run k8s-delete-staging
+ATLAS_CONFIRM_STAGING_DELETE=atlas-platform-staging mise run k8s-delete-staging
 ```
 
-`k8s-delete-staging` se mantiene como limpieza local de namespace. El despliegue normal de `staging` sigue siendo GitOps.
+`k8s-delete-staging` ahora es GitOps-aware: elimina primero la Application de Argo CD
+sin cascada, filtra `Namespace` y `PersistentVolumeClaim` del delete renderizado por defecto y
+preserva el almacenamiento. Usa `PRESERVE_POSTGRES_PVC=0` solo para borrar tambien el
+almacenamiento y el namespace.
 
 ## Alcance
 

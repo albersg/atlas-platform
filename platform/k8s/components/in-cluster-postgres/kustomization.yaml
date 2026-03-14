@@ -6,5 +6,6 @@ resources:
   - networking/postgres-service.yaml
   - resilience/postgres-pdb.yaml
   - networkpolicy-postgres.yaml
+  - networkpolicy-postgres-admin-egress.yaml
   - networkpolicy-inventory-service-postgres-egress.yaml
   - networkpolicy-inventory-migration-postgres-egress.yaml

@@ -1,0 +1,42 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-canonical-staging-images-by-digest
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-canonical-staging-inventory-images-by-digest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - Job
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - inventory-service
+                - inventory-migration
+      validate:
+        message: Canonical staging inventory workloads must use immutable digests.
+        foreach:
+          - list: request.object.spec.template.spec.containers
+            pattern:
+              image: ghcr.io/albersg/atlas-inventory-service@sha256:*
+    - name: require-canonical-staging-web-image-by-digest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - web
+      validate:
+        message: Canonical staging web workloads must use immutable digests.
+        foreach:
+          - list: request.object.spec.template.spec.containers
+            pattern:
+              image: ghcr.io/albersg/atlas-web@sha256:*
