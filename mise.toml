@@ -99,7 +99,8 @@ run = "uv run --project services/inventory-service --extra dev pyright"
 [tasks.typecheck]
 description = "Run all repository type checks"
 run = [
-  "mise run backend-typecheck"
+  "mise run backend-typecheck",
+  "mise run frontend-typecheck"
 ]
 
 [tasks.docs-build]
@@ -130,17 +131,21 @@ run = "cd apps/web && npm run dev"
 description = "Build web app"
 run = "cd apps/web && npm run build"
 
+[tasks.frontend-typecheck]
+description = "Run static type checking for web app"
+run = "cd apps/web && npm run typecheck"
+
 [tasks.compose-up]
 description = "Start local stack with Docker Compose"
-run = "docker compose up --build -d"
+run = "./scripts/compose/require-compose.sh up --build -d"
 
 [tasks.compose-down]
 description = "Stop local stack"
-run = "docker compose down"
+run = "./scripts/compose/require-compose.sh down"
 
 [tasks.compose-logs]
 description = "Tail stack logs"
-run = "docker compose logs -f --tail=200"
+run = "./scripts/compose/require-compose.sh logs -f --tail=200"
 
 [tasks.k8s-preflight]
 description = "Validate k3s prerequisites and cluster capabilities"
@@ -263,6 +268,7 @@ description = "Run complete local validation"
 run = [
   "mise run lint",
   "mise run typecheck",
+  "mise run frontend-build",
   "mise run test"
 ]
 
