@@ -1,52 +1,41 @@
-# End-to-End Developer Workflow
+# Daily Workflow And Change Lifecycle
 
-This guide defines the standard day-to-day workflow for feature delivery in this repository.
+This is the standard path for taking a change from idea to validated repository state.
 
-## 1) Bootstrap (first time)
-
-```bash
-mise install
-mise run bootstrap
-mise run app-bootstrap
-```
-
-What this gives you:
-
-- pinned local tooling,
-- git hooks,
-- backend and frontend dependencies.
-
-## 2) Local development
-
-Backend only:
+## 1. Start a change safely
 
 ```bash
-mise run backend-dev
+git status
 ```
 
-Frontend only:
+- What it is for: shows your current branch and uncommitted work before you begin.
+- When to run it: at the start of every change.
+- What it tells you: whether you are building on a clean state or need to account for existing changes.
+- Run next: choose the development loop you need.
 
-```bash
-mise run frontend-dev
-```
+## 2. Build in the smallest useful loop
 
-Full stack with containers:
+Choose one of these:
 
-```bash
-mise run compose-up
-```
+- backend only: `mise run backend-dev`
+- frontend only: `mise run frontend-dev`
+- full stack: `mise run compose-up`
+- Kubernetes lab: `mise run k8s-deploy-dev`
 
-## 3) Feature implementation
+Read more in [Local development](local-development.md) and
+[Operations overview](../operations/overview.md).
 
-Recommended sequence:
+## 3. Make the code and doc changes together
 
-1. add/modify domain and application code,
-2. implement adapters and API changes,
-3. add migrations when persistence changes,
-4. add or update tests for behavior and edge cases,
-5. update docs if behavior/contracts changed.
+For a normal feature or fix, the expected order is:
 
-## 4) Quality gates before PR
+1. update the application code,
+2. add or update tests,
+3. add a migration if persistence changes,
+4. update documentation if behavior, commands, or workflows change,
+5. inspect the diff before validation.
+
+## 4. Run the normal validation path
 
 ```bash
 mise run fmt
@@ -55,81 +44,46 @@ mise run typecheck
 mise run test
 mise run docs-build
 mise run check
+```
+
+Why this order matters:
+
+- `fmt` resolves safe formatting issues first.
+- `lint` catches policy, style, and security issues early.
+- `typecheck` validates backend and frontend static types.
+- `test` validates repo policy and backend behavior.
+- `docs-build` catches broken docs navigation or links.
+- `check` reruns the core grouped path that CI expects locally.
+
+## 5. Reproduce the CI path before a pull request
+
+```bash
 mise run ci
 ```
 
-Notes:
+- What it is for: the closest local equivalent to the main CI path.
+- Under the hood: runs `fmt-check`, `check`, `k8s-validate-overlays`, `docs-build`, and `security`.
+- Good outcome: you can expect fewer surprises from GitHub Actions.
 
-- `mise run test` enforces backend coverage threshold.
-- `mise run ci` mirrors CI validation path.
+## 6. Move beyond local only when needed
 
-## 5) k3s deployment flow (dev)
+- Use [k3s dev environment](../operations/k3s-dev.md) when you need Kubernetes-specific validation.
+- Use [Staging-local](../operations/staging-local.md) when you want to rehearse the GitOps topology locally.
+- Use [Canonical staging](../operations/canonical-staging.md) and
+  [Staging promotion](../operations/staging-promotion.md) when the change is ready for the real staging path.
 
-```bash
-mise run k8s-preflight
-mise run k8s-build-images
-mise run k8s-import-images
-mise run k8s-deploy-dev
-mise run k8s-status
-mise run k8s-access
-```
+## 7. Pull request readiness checklist
 
-`mise run k8s-build-images` writes the current dev image tags to
-`.gitops-local/k3s/dev-images.env`; `k8s-import-images` and `k8s-deploy-dev` reuse
-that state so the cluster rolls forward to the exact images that were just built.
+- The right local loop worked for the change.
+- Validation commands passed.
+- Docs changed if behavior or workflow changed.
+- No secrets or sensitive material entered the diff.
+- The rollback or operational risk is understood for platform-affecting changes.
 
-Delete dev deployment:
+## Related guides
 
-```bash
-mise run k8s-delete-dev
-```
-
-## 6) GitOps + registry flow (staging)
-
-Prerequisites:
-
-- the target images exist in GHCR,
-- Argo CD is installed in the cluster,
-- the repo credential is installed in `argocd`,
-- the SOPS age key is installed in `argocd`.
-
-Typical flow:
-
-```bash
-ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
-mise run k8s-status-staging
-mise run k8s-access-staging
-```
-
-## 7) Observability and runtime configuration
-
-Backend Sentry (optional):
-
-- `INVENTORY_SENTRY_DSN`
-- `INVENTORY_SENTRY_TRACES_SAMPLE_RATE`
-
-Frontend Sentry (optional):
-
-- `VITE_SENTRY_DSN`
-- `VITE_SENTRY_ENVIRONMENT`
-- `VITE_SENTRY_TRACES_SAMPLE_RATE`
-
-## 8) PR readiness checklist
-
-- Architecture boundaries preserved (domain/application/ports/adapters).
-- No secrets or private material committed.
-- Validation commands pass locally.
-- Rollback path documented if the change is risky.
-- Docs updated (`README`, runbooks, ADRs if needed).
-
-## 9) Release baseline
-
-For the current non-production release flow:
-
-1. build immutable images and publish them to the registry,
-2. capture the published digests,
-3. promote `staging` by digest through a pull request,
-4. verify health checks and key paths,
-5. monitor logs/errors/metrics and rollback quickly if needed.
-
-Production rollout is intentionally deferred until there is separate production infrastructure.
+- [Local development](local-development.md)
+- [Backend development](backend-development.md)
+- [Frontend development](frontend-development.md)
+- [Database and migrations](database-migrations.md)
+- [Quality and CI](quality-and-ci.md)

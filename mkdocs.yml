@@ -1,5 +1,5 @@
 site_name: Atlas Platform
-site_description: Documentación técnica y operativa de Atlas Platform
+site_description: Step-by-step repository, development, and operations documentation for Atlas Platform
 repo_url: https://github.com/albersg/atlas-platform
 theme:
   name: material
@@ -14,34 +14,48 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - Inicio: index.md
-  - Primeros pasos:
-      - Quickstart: getting-started/quickstart.md
-      - Mapa del repositorio: getting-started/repository-map.md
-  - Desarrollo:
-      - Desarrollo local: development/local-development.md
-      - Desarrollo backend: development/backend-development.md
-      - Desarrollo frontend: development/frontend-development.md
-      - Flujo end-to-end: development/END_TO_END_WORKFLOW.md
-      - Calidad y CI: development/quality-and-ci.md
-      - Actualización de paquetes: development/DEPENDENCY_UPDATES.md
-  - Arquitectura:
-      - Resumen: architecture/overview.md
-      - Hexagonal + Screaming: architecture/hexagonal-screaming-architecture.md
-      - Topología de despliegue: architecture/deployment-topology.md
-  - ADRs:
-      - Indice de ADRs: adr/index.md
-      - Monorepo vs Multirepo: adr/0001-monorepo-vs-multirepo.md
-  - Operaciones:
-      - Panorama operativo: operations/overview.md
-      - Indice de deployment: deployment/README.md
-      - Runbook k3s: deployment/k3s/RUNBOOK.md
-      - Runbook GitOps con Argo CD y SOPS: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
-      - Promoción de imágenes: deployment/releases/IMAGE_PROMOTION.md
-      - Playbook Agent-First DevSecOps: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
-  - Referencia:
-      - Tareas canónicas: reference/commands.md
-      - Mapa del monorepo: reference/components.md
-  - Proyecto:
-      - Gobernanza: project/governance.md
-      - Modelo operativo: project/operating-model.md
+  - Home: index.md
+  - Start Here:
+      - What is Atlas Platform?: getting-started/what-is-atlas-platform.md
+      - Learning path: getting-started/learning-path.md
+      - First-day setup: getting-started/quickstart.md
+      - Repository tour: getting-started/repository-map.md
+      - Glossary: reference/glossary.md
+  - Development:
+      - Daily workflow and change lifecycle: development/END_TO_END_WORKFLOW.md
+      - Local development: development/local-development.md
+      - Backend development: development/backend-development.md
+      - Frontend development: development/frontend-development.md
+      - Database and migrations: development/database-migrations.md
+      - Docs workflow: development/docs-workflow.md
+      - Quality and CI: development/quality-and-ci.md
+      - Dependency updates: development/DEPENDENCY_UPDATES.md
+  - Operations:
+      - Overview: operations/overview.md
+      - Local Compose: operations/local-compose.md
+      - k3s dev environment: operations/k3s-dev.md
+      - GitOps bootstrap: operations/gitops-bootstrap.md
+      - Staging-local: operations/staging-local.md
+      - Canonical staging: operations/canonical-staging.md
+      - Backup and restore: operations/backup-restore.md
+      - Release workflow: operations/release-workflow.md
+      - Staging promotion: operations/staging-promotion.md
+      - Deployment runbooks index: deployment/README.md
+      - k3s runbook: deployment/k3s/RUNBOOK.md
+      - GitOps runbook: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
+      - Image promotion runbook: deployment/releases/IMAGE_PROMOTION.md
+      - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Hexagonal and screaming architecture: architecture/hexagonal-screaming-architecture.md
+      - Deployment topology: architecture/deployment-topology.md
+  - Reference:
+      - Command reference: reference/commands.md
+      - Configuration and environment variables: reference/configuration.md
+      - Troubleshooting: reference/troubleshooting.md
+      - Monorepo component map: reference/components.md
+  - Project:
+      - Governance: project/governance.md
+      - Operating model: project/operating-model.md
+      - ADR index: adr/index.md
+      - ADR 0001 - Monorepo vs multirepo: adr/0001-monorepo-vs-multirepo.md

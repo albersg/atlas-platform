@@ -1,78 +1,98 @@
-# Calidad y CI
+# Quality And CI
 
-Atlas Platform mantiene un camino de validacion unico para local y remoto. La idea
-es que desarrolladores y agentes ejecuten las mismas tareas que despues validan
-los workflows de GitHub Actions.
+Atlas Platform uses one validation story across local work and GitHub Actions.
+The goal is simple: the commands you run locally should explain what CI will do later.
 
-## Flujo canonico
+## Which quality tools matter here
 
-| Tarea | Objetivo |
+| Tool | What it protects |
 | --- | --- |
-| `mise run fmt` | Aplica auto-fixes seguros de formato |
-| `mise run lint` | Ejecuta lint y policy checks con reintentos acotados |
-| `mise run typecheck` | Ejecuta analisis de tipos del backend |
-| `mise run test` | Ejecuta tests de politica del repo y tests unitarios backend |
-| `mise run docs-build` | Construye la documentacion con MkDocs Material |
-| `mise run security` | Ejecuta checks de seguridad dedicados |
-| `mise run check` | Ejecuta `lint + typecheck + test` |
-| `mise run ci` | Reproduce el camino de CI: formato, validacion, docs y seguridad |
+| `pre-commit` | one place to run formatting, linting, policy, and secret-scanning hooks |
+| `ruff` | Python style and formatting correctness |
+| `pyright` | backend type safety |
+| `pytest` | backend unit and service behavior |
+| `gitleaks` and `detect-secrets` | accidental secrets in the repo |
+| GitHub Actions | repeatable CI, security, and release automation |
+| Dependabot | routine dependency update pull requests |
+| dependency review | blocks risky dependency changes on pull requests |
 
-Tareas de apoyo:
+## Recommended command order
 
-- `mise run fmt-check`: verifica que `fmt` no genere diffs.
-- `mise run fix`: alias de auto-fixes seguros.
-- `mise run doctor`: diagnostico de entorno `mise`.
-- `mise run lock`: actualiza `mise.lock`.
-- `mise run hooks-update`: actualiza hooks de `pre-commit`.
+| Command | Why you run it |
+| --- | --- |
+| `mise run fmt` | apply safe formatting fixes first |
+| `mise run lint` | catch style, policy, and security issues |
+| `mise run typecheck` | validate backend and frontend static types |
+| `mise run test` | run repo policy tests and backend unit tests |
+| `mise run docs-build` | make sure docs navigation and links still work |
+| `mise run check` | rerun the standard grouped local validation path |
+| `mise run ci` | approximate the full CI pipeline locally |
 
-## Semantica operativa clave
+## Key commands explained
 
-- `mise run lint` usa `MISE_LINT_MAX_TRIES` y por defecto reintenta hasta `3` veces si algun hook auto-modifica archivos.
-- `mise run test` mantiene cobertura para el backend y tests de politica del repo.
-- `mise run ci` es la referencia antes de abrir PR cuando quieres aproximarte al camino remoto completo.
+### `mise run fmt`
 
-## Que ejecuta GitHub Actions
+- Purpose: apply safe auto-fixes.
+- Under the hood: runs selected `pre-commit` hooks for whitespace, line endings, shell formatting, and Python formatting.
+- Run next: `mise run lint`.
 
-Workflow principal:
+### `mise run lint`
 
-- `.github/workflows/ci.yml`
+- Purpose: run lint and policy checks.
+- Under the hood: validates the pre-commit config, then runs the full hook set with bounded retries.
+- Tooling detail: this is where `ruff`, Markdown linting, shell checks, YAML validation, and repository policy hooks usually run.
+- Useful detail: `MISE_LINT_MAX_TRIES` controls the retry cap and defaults to `3`.
+- Run next: `mise run typecheck` or inspect any hook-modified files.
 
-En `push` a `main` y en `pull_request` ejecuta:
+### `mise run test`
 
-- checkout endurecido,
-- setup de `mise`,
-- `mise run bootstrap`,
-- `mise run fmt-check`,
-- `mise run check`,
-- `mise run docs-build`,
-- `mise run security`,
-- validacion GitOps de overlays cuando hay `SOPS_AGE_KEY` disponible.
+- Purpose: run both repository-level policy tests and backend unit tests.
+- Under the hood: runs `python -m unittest discover` in `tests/` and backend `pytest` unit tests through `uv`.
+- Tooling detail: `uv` ensures the backend test command uses the pinned Python environment.
 
-Workflows complementarios:
+### `mise run check`
 
-- `.github/workflows/security.yml`: checks dedicados y Trivy sobre imagenes.
-- `.github/workflows/codeql.yml`: analisis SAST con CodeQL.
-- `.github/workflows/release-images.yml`: build, scan, firma y publicacion de imagenes.
-- `.github/workflows/promote-staging.yml`: promocion de `staging` por digest.
+- Purpose: grouped local validation.
+- Under the hood: runs `lint`, `typecheck`, `frontend-build`, and `test`.
+- Important detail: it does not include `docs-build`; run that separately when docs change.
 
-## Guardrails activos
+### `mise run ci`
 
-- hooks baseline para YAML/JSON/TOML, conflictos de merge y permisos,
-- `detect-secrets` y `gitleaks`,
-- `actionlint` y validacion de workflows,
-- `ruff`, `yamllint`, `markdownlint` y `typos`,
-- Trivy para imagenes de `inventory-service` y `web`,
-- CodeQL y politica de paquetes en GitHub.
+- Purpose: closest local reproduction of the CI path.
+- Under the hood: runs `fmt-check`, `check`, `k8s-validate-overlays`, `docs-build`, and `security`.
+- When to run it: before a pull request or whenever you changed platform or docs behavior.
 
-## Recomendacion antes de PR
+## Security and policy tools in the pipeline
 
-```bash
-mise run ci
-pre-commit run --all-files
-```
+- `detect-secrets` and `gitleaks` look for committed secrets.
+- `check-github-workflows` and `zizmor` look for unsafe GitHub Actions patterns.
+- `k8s-validate-overlays` renders manifests, applies Kyverno policy bundles, verifies trusted images, and schema-checks the result.
+- The image release path later adds Trivy scanning, Syft SBOM generation, and Cosign signing.
 
-## Troubleshooting frecuente
+## What GitHub Actions does
 
-- Si `fmt-check` falla por un diff, ejecuta `mise run fmt`, revisa cambios y vuelve a correr `mise run ci`.
-- Si un hook falla tras actualizar tooling, ejecuta `mise run bootstrap` para reinstalar hooks.
-- Si modificas `mise.toml`, actualiza tambien `mise.lock` con `mise run lock`.
+Main workflows:
+
+- `.github/workflows/ci.yml`: core validation on pushes and pull requests.
+- `.github/workflows/security.yml`: focused security scanning.
+- `.github/workflows/codeql.yml`: CodeQL analysis.
+- `.github/workflows/dependency-review.yml`: blocks risky new runtime dependencies in pull requests.
+- `.github/workflows/release-images.yml`: build, scan, sign, and publish images.
+- `.github/workflows/promote-staging.yml`: open or update the digest-promotion pull request.
+
+## Automated dependency maintenance
+
+- `.github/dependabot.yml` keeps GitHub Actions, Python, npm, and Docker inputs moving.
+- Dependency update PRs still go through the same local and CI checks as any other change.
+
+## Common failure patterns
+
+- `fmt-check` fails because a formatter wants to change files: run `mise run fmt`.
+- `lint` fails after tool changes: run `mise run bootstrap` to refresh hooks.
+- `docs-build` fails: inspect nav changes, links, and missing files.
+- `k8s-validate-overlays` fails: treat it as a platform or secrets-rendering problem, not just a docs problem.
+
+## Read next
+
+- [Command reference](../reference/commands.md)
+- [Troubleshooting](../reference/troubleshooting.md)

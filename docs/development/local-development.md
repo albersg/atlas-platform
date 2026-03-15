@@ -1,74 +1,80 @@
-# Desarrollo local
+# Local Development
 
-Esta guia concentra el loop diario para desarrollar, validar y depurar Atlas Platform
-sin salir del flujo canónico del repositorio.
+This guide explains the normal local loops for coding, testing, and validating a change.
 
-## Modos de trabajo
+## Choose the right loop
 
-### Stack completo con Compose
+| If you need... | Use this |
+| --- | --- |
+| Backend only | `mise run backend-dev` |
+| Frontend only | `mise run frontend-dev` |
+| Full app with PostgreSQL | `mise run compose-up` |
+| Full local validation | `mise run check` and `mise run docs-build` |
 
-```bash
-mise run compose-up
-```
-
-Servicios expuestos:
-
-- Web: `http://localhost:8080`
-- API docs: `http://localhost:8000/docs`
-- API liveness: `http://localhost:8000/healthz`
-- API readiness: `http://localhost:8000/readyz`
-
-Gestion del stack:
-
-```bash
-mise run compose-logs
-mise run compose-down
-```
-
-### Procesos de desarrollo por separado
-
-Backend:
+## Backend-only loop
 
 ```bash
 mise run backend-dev
 ```
 
-Frontend:
+- Purpose: run `inventory-service` with auto-reload.
+- Prerequisites: backend dependencies installed; PostgreSQL reachable through `INVENTORY_DATABASE_URL` if your change needs the database.
+- Under the hood: runs `uvicorn inventory_service.main:app --reload` inside `services/inventory-service`.
+- Expected output: a local API server on port `8000`.
+- Run next: `mise run backend-test`, `mise run backend-migrate`, or `mise run test`.
+
+## Frontend-only loop
 
 ```bash
 mise run frontend-dev
 ```
 
-## Flujo diario recomendado
+- Purpose: run the Vite dev server for the web app.
+- Prerequisites: frontend dependencies installed.
+- Under the hood: runs `npm run dev` inside `apps/web`.
+- Expected output: a local Vite server and hot reload.
+- Run next: `mise run frontend-build` or `mise run typecheck`.
+
+## Full local validation loop
 
 ```bash
-git status
 mise run fmt
 mise run lint
+mise run typecheck
 mise run test
-mise run check
+mise run docs-build
 ```
 
-Antes de abrir una PR:
+Use this before you consider a change locally complete.
 
-```bash
-mise run ci
-pre-commit run --all-files
-```
+## When to switch to Compose
 
-## Cuando usar k3s local
+Use Compose when you want:
 
-Usa k3s cuando necesites validar:
+- PostgreSQL without manual setup,
+- backend and frontend together,
+- a closer approximation of the app running as a small stack.
 
-- overlays reales de Kubernetes,
-- comportamiento del namespace `atlas-platform-dev`,
-- smoke checks y reachability por Ingress,
-- el flujo GitOps de `staging` en un cluster local.
+Read [Local Compose](../operations/local-compose.md) for details.
 
-Punto de entrada: [Panorama operativo](../operations/overview.md)
+## When to switch to k3s
 
-## Troubleshooting rapido
+Use k3s when the change depends on:
 
-- `mise` no se encuentra: inicializa `mise` en tu shell y reinicia terminal.
-- `fmt-check` falla por diff: ejecuta `mise run fmt`, revisa cambios y repite.
-- fallo de conexion del backend: revisa `INVENTORY_DATABASE_URL` y el estado de PostgreSQL.
+- Kubernetes manifests,
+- Ingress or service behavior,
+- migration jobs in-cluster,
+- staging or GitOps learning.
+
+Read [k3s dev environment](../operations/k3s-dev.md).
+
+## Common next commands
+
+- `mise run check`: grouped local validation.
+- `mise run ci`: CI-equivalent validation path.
+- `mise run compose-up`: full local stack.
+- `mise run docs-build`: verify docs after documentation changes.
+
+## If something fails
+
+Start with [Troubleshooting](../reference/troubleshooting.md).
