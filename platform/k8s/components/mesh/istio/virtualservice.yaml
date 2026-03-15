@@ -1,0 +1,45 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: atlas-frontend
+spec:
+  gateways:
+    - atlas-platform-gateway
+  hosts:
+    - staging.atlas.example.com
+  http:
+    - match:
+        - uri:
+            prefix: /api
+      route:
+        - destination:
+            host: inventory-service
+            port:
+              number: 8000
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: web
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: atlas-api
+spec:
+  gateways:
+    - atlas-platform-gateway
+  hosts:
+    - api.staging.atlas.example.com
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: inventory-service
+            port:
+              number: 8000

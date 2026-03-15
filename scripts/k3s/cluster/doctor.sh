@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 PATH="$ROOT_DIR/.gitops-local/bin:$PATH"
 DOCTOR_SCOPE="${ATLAS_DOCTOR_SCOPE:-staging}"
 required_tools=(kubectl docker)
-staging_tools=(argocd sops age kustomize ksops kyverno cosign)
+staging_tools=(argocd sops age kustomize ksops kyverno cosign helm istioctl)
 prereq_failures=0
 operational_failures=0
 operational_warnings=0
@@ -85,6 +85,10 @@ print_section() {
   printf '\n== %s ==\n' "$title"
 }
 
+has_argocd_app_crd() {
+  kubectl api-resources --verbs=list --namespaced -o name 2>/dev/null | grep -qx 'applications.argoproj.io'
+}
+
 check_docker_compose() {
   if docker compose version >/dev/null 2>&1; then
     echo "[ok] docker compose disponible"
@@ -146,12 +150,36 @@ if [[ "$DOCTOR_SCOPE" = "staging" || "$DOCTOR_SCOPE" = "all" ]]; then
     record_operational_failure "[operational-fail] falta el namespace atlas-platform-staging. El entorno no esta desplegado en este cluster."
   fi
 
-  if kubectl api-resources --verbs=list --namespaced -o name 2>/dev/null | grep -qx 'applications.argoproj.io'; then
+  if has_argocd_app_crd; then
+    check_operational_resource \
+      "Argo CD application atlas-platform-istio-base presente" \
+      -n argocd get application atlas-platform-istio-base
+    check_operational_resource \
+      "Argo CD application atlas-platform-istiod presente" \
+      -n argocd get application atlas-platform-istiod
+    check_operational_resource \
+      "Argo CD application atlas-platform-istio-ingress presente" \
+      -n argocd get application atlas-platform-istio-ingress
     check_operational_resource \
       "Argo CD application atlas-platform-staging presente" \
       -n argocd get application atlas-platform-staging
   else
-    record_operational_warning "[operational-warn] el CRD applications.argoproj.io no esta registrado; no se puede comprobar la Application de Argo CD desde este cluster."
+    record_operational_warning "[operational-warn] el CRD applications.argoproj.io no esta registrado; no se pueden comprobar las Applications de Argo CD desde este cluster."
+  fi
+
+  if kubectl get namespace istio-system >/dev/null 2>&1; then
+    echo "[ok] namespace istio-system presente"
+    check_operational_resource \
+      "deployment istiod disponible en istio-system" \
+      -n istio-system get deployment istiod
+    check_operational_resource \
+      "deployment atlas-platform-istio-ingress disponible en istio-system" \
+      -n istio-system get deployment atlas-platform-istio-ingress
+    check_operational_resource \
+      "service atlas-platform-istio-ingress disponible en istio-system" \
+      -n istio-system get service atlas-platform-istio-ingress
+  else
+    record_operational_failure "[operational-fail] falta el namespace istio-system. La capa infra de Istio no esta desplegada en este cluster."
   fi
 
   if kubectl get namespace atlas-platform-staging >/dev/null 2>&1; then

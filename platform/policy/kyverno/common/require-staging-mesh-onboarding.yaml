@@ -1,0 +1,61 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-staging-mesh-onboarding
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-staging-app-sidecars
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - inventory-service
+                - web
+      validate:
+        message: Mesh-enabled staging workloads must opt into sidecar injection.
+        pattern:
+          spec:
+            template:
+              metadata:
+                annotations:
+                  sidecar.istio.io/inject: "true"
+    - name: require-staging-migration-sidecar
+      match:
+        any:
+          - resources:
+              kinds:
+                - Job
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - inventory-migration
+      validate:
+        message: The inventory migration job must stay in the first-wave staging mesh onboarding set.
+        pattern:
+          spec:
+            template:
+              metadata:
+                annotations:
+                  sidecar.istio.io/inject: "true"
+    - name: require-staging-mesh-routing-core
+      match:
+        any:
+          - resources:
+              kinds:
+                - Gateway
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - atlas-platform-gateway
+      validate:
+        message: Staging mesh overlays must define the shared atlas-platform Istio gateway.
+        pattern:
+          spec:
+            selector:
+              istio: atlas-platform-istio-ingress

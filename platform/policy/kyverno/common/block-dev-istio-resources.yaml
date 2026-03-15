@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-dev-istio-resources
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: disallow-dev-mesh-runtime-resources
+      match:
+        any:
+          - resources:
+              namespaces:
+                - atlas-platform-dev
+              kinds:
+                - Gateway
+                - VirtualService
+                - DestinationRule
+                - PeerAuthentication
+                - AuthorizationPolicy
+      validate:
+        message: Dev must stay on the non-mesh path and cannot own Istio mesh runtime resources.
+        deny: {}

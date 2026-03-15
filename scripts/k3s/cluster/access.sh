@@ -5,10 +5,11 @@ NAMESPACE="${1:-atlas-platform-dev}"
 FRONTEND_HOST="${2:-atlas.local}"
 API_HOST="${3:-api.atlas.local}"
 NODE_IP="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')"
+STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"
 
 if [ "$NAMESPACE" = "atlas-platform-staging" ]; then
-  FRONTEND_SCHEME="https"
-  API_SCHEME="https"
+  FRONTEND_SCHEME="$STAGING_INGRESS_SCHEME"
+  API_SCHEME="$STAGING_INGRESS_SCHEME"
 else
   FRONTEND_SCHEME="http"
   API_SCHEME="http"

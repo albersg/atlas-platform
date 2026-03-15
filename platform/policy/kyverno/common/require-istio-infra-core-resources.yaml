@@ -1,0 +1,44 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-istio-infra-core-resources
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-istiod-deployment
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - istio-system
+              names:
+                - istiod
+      validate:
+        message: The Istio infra render must include the istiod deployment in istio-system.
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: discovery
+    - name: require-istio-ingress-deployment
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - istio-system
+              names:
+                - atlas-platform-istio-ingress
+      validate:
+        message: The Istio infra render must include the atlas-platform ingress deployment.
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: istio-proxy

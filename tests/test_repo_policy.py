@@ -32,10 +32,30 @@ class RepoPolicyTests(unittest.TestCase):
             "README.md",
             "docs/deployment/releases/IMAGE_PROMOTION.md",
             "platform/argocd/core/upstream/install-v2.13.3.yaml",
+            "platform/argocd/apps/project-atlas-platform-infra.yaml",
+            "platform/argocd/apps/atlas-platform-istio-base.yaml",
+            "platform/argocd/apps/atlas-platform-istiod.yaml",
+            "platform/argocd/apps/atlas-platform-istio-ingress.yaml",
             "platform/argocd/apps/atlas-platform-staging.yaml",
+            "platform/helm/istio/base/Chart.yaml",
+            "platform/helm/istio/istiod/Chart.yaml",
+            "platform/helm/istio/gateway/Chart.yaml",
+            "platform/policy/kyverno/common/block-dev-istio-resources.yaml",
+            "platform/policy/kyverno/common/require-istio-infra-core-resources.yaml",
+            "platform/policy/kyverno/common/require-staging-mesh-onboarding.yaml",
+            "platform/policy/kyverno/staging/require-canonical-staging-mesh-routing.yaml",
+            "platform/k8s/components/ingress/traefik/kustomization.yaml",
+            "platform/k8s/components/ingress/traefik/ingress.yaml",
+            "platform/k8s/components/mesh/istio/kustomization.yaml",
+            "platform/k8s/components/mesh/istio/gateway.yaml",
+            "platform/k8s/components/mesh/istio/virtualservice.yaml",
+            "platform/k8s/components/mesh/istio/destinationrule.yaml",
+            "platform/k8s/components/mesh/istio/peerauthentication.yaml",
+            "platform/k8s/components/mesh/istio/authorizationpolicy.yaml",
             "platform/k8s/components/images/staging-local/kustomization.yaml",
             "platform/k8s/overlays/staging/kustomization.yaml",
             "scripts/gitops/bootstrap/apply-staging-app.sh",
+            "scripts/gitops/render-platform-infra.sh",
             "scripts/gitops/delete-staging.sh",
             "scripts/gitops/validate-overlays.sh",
             "scripts/gitops/deploy/staging.sh",
@@ -90,6 +110,8 @@ class RepoPolicyTests(unittest.TestCase):
             "gitops-wait-staging",
             "gitops-render-dev",
             "gitops-render-staging",
+            "gitops-render-platform-infra-staging-local",
+            "gitops-render-platform-infra-staging",
             "k8s-doctor",
             "k8s-backup-postgres-staging",
             "k8s-restore-postgres-staging",
@@ -237,8 +259,209 @@ class RepoPolicyTests(unittest.TestCase):
         )
         self.assertIn('COMMON_POLICY_BUNDLE="platform/policy/kyverno/common"', contents)
         self.assertIn('STAGING_POLICY_BUNDLE="platform/policy/kyverno/staging"', contents)
-        self.assertIn('apply_policy_bundle "$COMMON_POLICY_BUNDLE" staging-local common', contents)
-        self.assertIn('apply_policy_bundle "$STAGING_POLICY_BUNDLE" staging staging-only', contents)
+        self.assertIn('ISTIOCTL_BIN="$TOOLS_DIR/istioctl"', contents)
+        self.assertIn("render_platform_infra staging", contents)
+        self.assertIn("render_platform_infra staging-local", contents)
+        self.assertIn("combine_surface staging", contents)
+        self.assertIn("combine_surface staging-local", contents)
+        self.assertIn(
+            'apply_policy_bundle "$COMMON_POLICY_BUNDLE" staging-local-policy-target common',
+            contents,
+        )
+        self.assertIn(
+            'apply_policy_bundle "$STAGING_POLICY_BUNDLE" staging-policy-target staging-only',
+            contents,
+        )
+        self.assertIn('"$ISTIOCTL_BIN" analyze --use-kube=false', contents)
+
+    def test_mesh_policy_bundles_cover_dev_guardrails_and_staging_contract(self) -> None:
+        common_kustomization = (
+            ROOT / "platform" / "policy" / "kyverno" / "common" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        staging_kustomization = (
+            ROOT / "platform" / "policy" / "kyverno" / "staging" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        dev_guardrail = (
+            ROOT / "platform" / "policy" / "kyverno" / "common" / "block-dev-istio-resources.yaml"
+        ).read_text(encoding="utf-8")
+        staging_mesh = (
+            ROOT
+            / "platform"
+            / "policy"
+            / "kyverno"
+            / "common"
+            / "require-staging-mesh-onboarding.yaml"
+        ).read_text(encoding="utf-8")
+        infra_core = (
+            ROOT
+            / "platform"
+            / "policy"
+            / "kyverno"
+            / "common"
+            / "require-istio-infra-core-resources.yaml"
+        ).read_text(encoding="utf-8")
+        canonical_mesh = (
+            ROOT
+            / "platform"
+            / "policy"
+            / "kyverno"
+            / "staging"
+            / "require-canonical-staging-mesh-routing.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("block-dev-istio-resources.yaml", common_kustomization)
+        self.assertIn("require-istio-infra-core-resources.yaml", common_kustomization)
+        self.assertIn("require-staging-mesh-onboarding.yaml", common_kustomization)
+        self.assertIn("require-canonical-staging-mesh-routing.yaml", staging_kustomization)
+        self.assertIn("atlas-platform-dev", dev_guardrail)
+        self.assertIn("Gateway", dev_guardrail)
+        self.assertIn('sidecar.istio.io/inject: "true"', staging_mesh)
+        self.assertIn("atlas-platform-gateway", staging_mesh)
+        self.assertIn("atlas-platform-istio-ingress", infra_core)
+        self.assertIn("api.staging.atlas.example.com", canonical_mesh)
+        self.assertIn("atlas-api", canonical_mesh)
+
+    def test_environment_ingress_and_mesh_components_stay_split(self) -> None:
+        dev_overlay = (
+            ROOT / "platform" / "k8s" / "overlays" / "dev" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        staging_overlay = (
+            ROOT / "platform" / "k8s" / "overlays" / "staging" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        staging_local_overlay = (
+            ROOT / "platform" / "k8s" / "overlays" / "staging-local" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        base_kustomization = (ROOT / "platform" / "k8s" / "base" / "kustomization.yaml").read_text(
+            encoding="utf-8"
+        )
+        traefik_component = (
+            ROOT / "platform" / "k8s" / "components" / "ingress" / "traefik" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        mesh_component = (
+            ROOT / "platform" / "k8s" / "components" / "mesh" / "istio" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertNotIn("networking/ingress.yaml", base_kustomization)
+        self.assertIn("../../components/ingress/traefik", dev_overlay)
+        self.assertNotIn("../../components/mesh/istio", dev_overlay)
+        self.assertIn("../../components/mesh/istio", staging_overlay)
+        self.assertIn("../../components/mesh/istio", staging_local_overlay)
+        self.assertIn("resources:\n  - ingress.yaml", traefik_component)
+        self.assertIn("resources:\n  - gateway.yaml", mesh_component)
+
+    def test_mesh_component_targets_only_first_wave_workloads(self) -> None:
+        mesh_component = (
+            ROOT / "platform" / "k8s" / "components" / "mesh" / "istio" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        control_plane_policy = (
+            ROOT
+            / "platform"
+            / "k8s"
+            / "components"
+            / "mesh"
+            / "istio"
+            / "networkpolicy-mesh-control-plane-egress.yaml"
+        ).read_text(encoding="utf-8")
+        migration_patch = (
+            ROOT
+            / "platform"
+            / "k8s"
+            / "components"
+            / "mesh"
+            / "istio"
+            / "patches"
+            / "inventory-migration-sidecar-injection.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("web-sidecar-injection.yaml", mesh_component)
+        self.assertIn("inventory-service-sidecar-injection.yaml", mesh_component)
+        self.assertIn("inventory-migration-sidecar-injection.yaml", mesh_component)
+        self.assertIn("inventory-migration", control_plane_policy)
+        self.assertNotIn("postgres", control_plane_policy)
+        self.assertIn('sidecar.istio.io/inject: "true"', migration_patch)
+
+    def test_staging_mesh_resources_use_mesh_native_http_entrypoint(self) -> None:
+        gateway = (
+            ROOT / "platform" / "k8s" / "components" / "mesh" / "istio" / "gateway.yaml"
+        ).read_text(encoding="utf-8")
+        virtual_service = (
+            ROOT / "platform" / "k8s" / "components" / "mesh" / "istio" / "virtualservice.yaml"
+        ).read_text(encoding="utf-8")
+        smoke_script = (ROOT / "scripts" / "k3s" / "verify" / "smoke.sh").read_text(
+            encoding="utf-8"
+        )
+        access_script = (ROOT / "scripts" / "k3s" / "cluster" / "access.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("istio: atlas-platform-istio-ingress", gateway)
+        self.assertIn("number: 80", gateway)
+        self.assertIn("staging.atlas.example.com", virtual_service)
+        self.assertIn("api.staging.atlas.example.com", virtual_service)
+        self.assertIn(
+            'STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"', smoke_script
+        )
+        self.assertIn(
+            'STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"', access_script
+        )
+
+    def test_argocd_app_projects_reflect_platform_boundary(self) -> None:
+        apps_kustomization = (
+            ROOT / "platform" / "argocd" / "apps" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        app_project = (
+            ROOT / "platform" / "argocd" / "apps" / "project-atlas-platform.yaml"
+        ).read_text(encoding="utf-8")
+        infra_project = (
+            ROOT / "platform" / "argocd" / "apps" / "project-atlas-platform-infra.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("project-atlas-platform-infra.yaml", apps_kustomization)
+        self.assertIn("atlas-platform-istio-base.yaml", apps_kustomization)
+        self.assertIn("atlas-platform-istiod.yaml", apps_kustomization)
+        self.assertIn("atlas-platform-istio-ingress.yaml", apps_kustomization)
+        self.assertIn("kind: Gateway", app_project)
+        self.assertIn("kind: VirtualService", app_project)
+        self.assertIn("kind: DestinationRule", app_project)
+        self.assertIn("kind: PeerAuthentication", app_project)
+        self.assertIn("kind: AuthorizationPolicy", app_project)
+        self.assertIn("name: atlas-platform-infra", infra_project)
+        self.assertIn("namespace: istio-system", infra_project)
+
+    def test_istio_wrapper_charts_pin_versions_and_render_tasks(self) -> None:
+        base_chart = (ROOT / "platform" / "helm" / "istio" / "base" / "Chart.yaml").read_text(
+            encoding="utf-8"
+        )
+        istiod_chart = (ROOT / "platform" / "helm" / "istio" / "istiod" / "Chart.yaml").read_text(
+            encoding="utf-8"
+        )
+        gateway_chart = (ROOT / "platform" / "helm" / "istio" / "gateway" / "Chart.yaml").read_text(
+            encoding="utf-8"
+        )
+        render_script = (ROOT / "scripts" / "gitops" / "render-platform-infra.sh").read_text(
+            encoding="utf-8"
+        )
+        install_tools = (ROOT / "scripts" / "gitops" / "bootstrap" / "install-tools.sh").read_text(
+            encoding="utf-8"
+        )
+        mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
+
+        self.assertIn("version: 1.25.3", base_chart)
+        self.assertIn("version: 1.25.3", istiod_chart)
+        self.assertIn("version: 1.25.3", gateway_chart)
+        self.assertIn('ENVIRONMENT="$1"', render_script)
+        self.assertIn('"$HELM_BIN" dependency build', render_script)
+        self.assertIn("values-${ENVIRONMENT}.yaml", render_script)
+        self.assertIn('HELM_VERSION="v3.16.4"', install_tools)
+        self.assertIn('ISTIOCTL_VERSION="1.25.3"', install_tools)
+        self.assertEqual(
+            mise_data["tasks"]["gitops-render-platform-infra-staging-local"]["run"],
+            "./scripts/gitops/render-platform-infra.sh staging-local",
+        )
+        self.assertEqual(
+            mise_data["tasks"]["gitops-render-platform-infra-staging"]["run"],
+            "./scripts/gitops/render-platform-infra.sh staging",
+        )
 
     def test_staging_delete_requires_explicit_confirmation(self) -> None:
         contents = (ROOT / "scripts" / "gitops" / "delete-staging.sh").read_text(encoding="utf-8")
@@ -417,8 +640,56 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("ATLAS_VALIDATE_PREFLIGHT=1", contents)
         self.assertIn("argocd-repo-atlas-platform", contents)
         self.assertIn("cosign", contents)
+        self.assertIn("helm", contents)
+        self.assertIn("istioctl", contents)
         self.assertIn("Salud operativa staging", contents)
+        self.assertIn("atlas-platform-istio-base", contents)
+        self.assertIn("atlas-platform-istio-ingress", contents)
+        self.assertIn("namespace istio-system presente", contents)
         self.assertIn("atlas-platform-staging", contents)
+
+    def test_staging_deploy_waits_for_infra_before_workloads(self) -> None:
+        deploy_script = (ROOT / "scripts" / "gitops" / "deploy" / "staging.sh").read_text(
+            encoding="utf-8"
+        )
+        apply_apps = (ROOT / "scripts" / "gitops" / "bootstrap" / "apply-apps.sh").read_text(
+            encoding="utf-8"
+        )
+        status_script = (ROOT / "scripts" / "k3s" / "cluster" / "status.sh").read_text(
+            encoding="utf-8"
+        )
+        smoke_script = (ROOT / "scripts" / "k3s" / "verify" / "smoke.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            'ARGOCD_WAIT_TIMEOUT_SECONDS="${ARGOCD_WAIT_TIMEOUT_SECONDS:-600}"', deploy_script
+        )
+        self.assertIn('"$ROOT_DIR/scripts/gitops/bootstrap/apply-apps.sh"', deploy_script)
+        self.assertIn(
+            '"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-base', deploy_script
+        )
+        self.assertIn('"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istiod', deploy_script)
+        self.assertIn(
+            '"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-ingress', deploy_script
+        )
+        self.assertIn(
+            '"$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging', deploy_script
+        )
+        self.assertIn('ARGOCD_ENVIRONMENT="${ARGOCD_ENVIRONMENT:-}"', apply_apps)
+        self.assertIn('f"        - values-{environment}.yaml"', apply_apps)
+        self.assertIn(
+            (
+                "atlas-platform-istio-base atlas-platform-istiod "
+                "atlas-platform-istio-ingress atlas-platform-staging"
+            ),
+            apply_apps,
+        )
+        self.assertIn("== Mesh Runtime ==", status_script)
+        self.assertIn("== Argo CD Applications ==", status_script)
+        self.assertIn("wait_for_sidecar_ready", smoke_script)
+        self.assertIn("require_sidecar_injection", smoke_script)
+        self.assertIn("deployment/atlas-platform-istio-ingress", smoke_script)
 
     def test_doctor_and_compose_tasks_preflight_docker_compose(self) -> None:
         mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))

@@ -35,6 +35,7 @@ nav:
       - Local Compose: operations/local-compose.md
       - k3s dev environment: operations/k3s-dev.md
       - GitOps bootstrap: operations/gitops-bootstrap.md
+      - Service mesh: operations/service-mesh.md
       - Staging-local: operations/staging-local.md
       - Canonical staging: operations/canonical-staging.md
       - Backup and restore: operations/backup-restore.md

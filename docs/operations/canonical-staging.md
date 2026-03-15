@@ -24,6 +24,7 @@ mise run k8s-access-staging
 ## What makes canonical staging different
 
 - it uses `platform/k8s/overlays/staging`, not `staging-local`,
+- it has a parallel `platform/helm/istio/*/values-staging.yaml` render surface and the same mesh workload component shape as `staging-local`,
 - it expects registry-backed images,
 - it relies on immutable digests for promotion,
 - staging-only hardening rules apply here,
@@ -32,15 +33,32 @@ mise run k8s-access-staging
 ## What to verify after deployment
 
 - Argo CD sync completed,
+- the three Istio infra applications are synced and healthy before the Atlas workload app,
 - workloads are healthy,
 - migration job completed,
 - smoke checks pass,
-- hostnames are reachable.
+- hostnames are reachable,
+- the Istio ingress gateway is serving the workload hostnames,
+- `istioctl analyze` and Kyverno validation both passed before rollout.
 
 ## Expected hostnames
 
 - `staging.atlas.example.com`
 - `api.staging.atlas.example.com`
+
+## Istio status in this slice
+
+Canonical `staging` now has pinned Helm value inputs, the same first-wave mesh
+workload component as `staging-local`, and a deterministic render path for Istio
+infrastructure:
+
+```bash
+mise run gitops-render-platform-infra-staging >/dev/null
+```
+
+That keeps promotion aligned with the rehearsal environment: validate
+`staging-local` first, then move the canonical overlay through the same mesh
+shape with digest-backed images.
 
 ## Read next
 

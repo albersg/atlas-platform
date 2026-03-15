@@ -1,0 +1,12 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: atlas-platform-allow-app-traffic
+spec:
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            ports:
+              - "8000"
+              - "8080"

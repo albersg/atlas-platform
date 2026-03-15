@@ -1,0 +1,14 @@
+- op: add
+  path: /spec/ingress/-
+  value:
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+        podSelector:
+          matchLabels:
+            app: atlas-platform-istio-ingress
+            istio: atlas-platform-istio-ingress
+    ports:
+      - protocol: TCP
+        port: 8080

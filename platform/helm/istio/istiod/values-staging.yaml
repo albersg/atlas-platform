@@ -1,0 +1,4 @@
+pilot:
+  autoscaleEnabled: true
+  autoscaleMin: 2
+  autoscaleMax: 3

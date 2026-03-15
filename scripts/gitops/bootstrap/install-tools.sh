@@ -18,6 +18,10 @@ KYVERNO_VERSION="v1.15.0"
 KYVERNO_SHA256="d5173342a6e3500f3fb1b9232ecaa8138b07663fd37c9aaa665c1d5cd2368a2b" # pragma: allowlist secret
 COSIGN_VERSION="v2.4.3"
 COSIGN_SHA256="caaad125acef1cb81d58dcdc454a1e429d09a750d1e9e2b3ed1aed8964454708" # pragma: allowlist secret
+HELM_VERSION="v3.16.4"
+HELM_SHA256="fc307327959aa38ed8f9f7e66d45492bb022a66c3e5da6063958254b9767d179" # pragma: allowlist secret
+ISTIOCTL_VERSION="1.25.3"
+ISTIOCTL_SHA256="fb0bb4d1b884f8575e576ea5614d51c717c62cabd052e7d08e89f273114eb0bc" # pragma: allowlist secret
 
 mkdir -p "$TOOLS_DIR" "$PLUGIN_DIR"
 
@@ -91,6 +95,8 @@ download_archive_binary "https://github.com/kubernetes-sigs/kustomize/releases/d
 download_archive_binary "https://github.com/viaduct-ai/kustomize-sops/releases/download/${KSOPS_VERSION}/ksops_${KSOPS_VERSION#v}_Linux_x86_64.tar.gz" "ksops" "$TOOLS_DIR/ksops" "$KSOPS_SHA256"
 download_archive_binary "https://github.com/kyverno/kyverno/releases/download/${KYVERNO_VERSION}/kyverno-cli_${KYVERNO_VERSION}_linux_x86_64.tar.gz" "kyverno" "$TOOLS_DIR/kyverno" "$KYVERNO_SHA256"
 download "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" "$TOOLS_DIR/cosign" "$COSIGN_SHA256"
+download_archive_binary "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" "linux-amd64/helm" "$TOOLS_DIR/helm" "$HELM_SHA256"
+download_archive_binary "https://github.com/istio/istio/releases/download/${ISTIOCTL_VERSION}/istioctl-${ISTIOCTL_VERSION}-linux-amd64.tar.gz" "istioctl" "$TOOLS_DIR/istioctl" "$ISTIOCTL_SHA256"
 
 ln -sf "$TOOLS_DIR/ksops" "$PLUGIN_DIR/ksops"
 
