@@ -400,7 +400,7 @@ class RepoPolicyTests(unittest.TestCase):
         contents = (ROOT / "scripts" / "k3s" / "cluster" / "doctor.sh").read_text(encoding="utf-8")
         self.assertIn("ATLAS_DOCTOR_SCOPE", contents)
         self.assertIn("ATLAS_VALIDATE_PREFLIGHT=1", contents)
-        self.assertIn("argocd-repo-agent-first-codex", contents)
+        self.assertIn("argocd-repo-atlas-platform", contents)
         self.assertIn("cosign", contents)
 
     def test_postgres_backup_restore_tasks_are_wired(self) -> None:

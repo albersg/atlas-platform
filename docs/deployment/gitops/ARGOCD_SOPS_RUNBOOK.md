@@ -48,6 +48,10 @@ mise run gitops-bootstrap-core
 ./scripts/gitops/bootstrap/install-repo-credential.sh
 ```
 
+Por defecto instala la credential para `git@github.com:albersg/atlas-platform.git`
+como el secret `argocd-repo-atlas-platform`. Solo sobreescribe
+`GITOPS_REPO_URL` o `ARGOCD_REPO_SECRET_NAME` si necesitas apuntar a otro repo.
+
 ### 6. Instalar la clave privada age en Argo CD
 
 ```bash

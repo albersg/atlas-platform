@@ -65,7 +65,7 @@ Esta pagina agrupa esas tareas por objetivo para que la navegacion sea mas rapid
 - `mise run gitops-install-tools`: instala binaries auxiliares.
 - `mise run gitops-bootstrap-core`: instala Argo CD core y plugin KSOPS.
 - `mise run gitops-install-age-key`: instala la clave age en `argocd`.
-- `mise run gitops-install-repo-credential`: instala la credential del repositorio.
+- `mise run gitops-install-repo-credential`: instala la credential del repositorio; por defecto crea `argocd-repo-atlas-platform` para `git@github.com:albersg/atlas-platform.git`.
 - `mise run gitops-apply-apps`: aplica el bundle GitOps de staging.
 - `mise run gitops-apply-staging`: aplica solo la app de `staging`.
 - `mise run gitops-wait-staging`: espera a que la app de `staging` sincronice.
