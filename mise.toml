@@ -216,7 +216,7 @@ description = "Safely tear down GitOps-managed staging with explicit confirmatio
 run = "./scripts/gitops/delete-staging.sh"
 
 [tasks.gitops-install-tools]
-description = "Install local Argo CD, SOPS, age, and kustomize helper binaries"
+description = "Install local GitOps, Helm, and Istio helper binaries"
 run = "./scripts/gitops/bootstrap/install-tools.sh"
 
 [tasks.gitops-bootstrap-core]
@@ -254,6 +254,14 @@ run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/dev"
 [tasks.gitops-render-staging]
 description = "Render the encrypted staging overlay locally via KSOPS"
 run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/staging"
+
+[tasks.gitops-render-platform-infra-staging-local]
+description = "Render the staged Istio platform inputs for staging-local"
+run = "./scripts/gitops/render-platform-infra.sh staging-local"
+
+[tasks.gitops-render-platform-infra-staging]
+description = "Render the staged Istio platform inputs for staging"
+run = "./scripts/gitops/render-platform-infra.sh staging"
 
 [tasks.k8s-validate-overlays]
 description = "Render non-production overlays and apply shared plus staging-only policies"

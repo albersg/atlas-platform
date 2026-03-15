@@ -10,6 +10,7 @@ ENVIRONMENT="$1"
 NAMESPACE="$2"
 FRONTEND_HOST="${3:-}"
 API_HOST="${4:-}"
+STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"
 
 case "$ENVIRONMENT" in
   dev)
@@ -21,8 +22,12 @@ case "$ENVIRONMENT" in
   staging)
     FRONTEND_HOST="${FRONTEND_HOST:-staging.atlas.example.com}"
     API_HOST="${API_HOST:-api.staging.atlas.example.com}"
-    INGRESS_SCHEME="https"
-    CURL_TLS_ARGS=(-k)
+    INGRESS_SCHEME="$STAGING_INGRESS_SCHEME"
+    if [ "$INGRESS_SCHEME" = "https" ]; then
+      CURL_TLS_ARGS=(-k)
+    else
+      CURL_TLS_ARGS=()
+    fi
     ;;
   *)
     echo "Entorno no soportado: $ENVIRONMENT" >&2
@@ -64,6 +69,62 @@ cleanup() {
   rm -rf "$TMP_DIR"
 }
 
+wait_for_sidecar_ready() {
+  local selector="$1"
+  local description="$2"
+
+  for _ in $(seq 1 30); do
+    local pods
+    pods="$(kubectl -n "$NAMESPACE" get pods -l "$selector" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
+    if [[ -n "$pods" ]]; then
+      local ready=1
+      while IFS= read -r pod_name; do
+        [[ -z "$pod_name" ]] && continue
+        local proxy_ready
+        proxy_ready="$(kubectl -n "$NAMESPACE" get pod "$pod_name" -o jsonpath='{.status.containerStatuses[?(@.name=="istio-proxy")].ready}')"
+        if [[ "$proxy_ready" != "true" ]]; then
+          ready=0
+          break
+        fi
+      done <<<"$pods"
+
+      if [[ "$ready" = "1" ]]; then
+        echo "${description}: sidecar listo"
+        return 0
+      fi
+    fi
+    sleep 2
+  done
+
+  echo "No se pudo verificar sidecar listo para ${description}" >&2
+  kubectl -n "$NAMESPACE" get pods -l "$selector" >&2 || true
+  exit 1
+}
+
+require_sidecar_injection() {
+  local selector="$1"
+  local description="$2"
+
+  local pods
+  pods="$(kubectl -n "$NAMESPACE" get pods -l "$selector" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
+  if [[ -z "$pods" ]]; then
+    echo "No se encontraron pods para verificar sidecar en ${description}" >&2
+    exit 1
+  fi
+
+  while IFS= read -r pod_name; do
+    [[ -z "$pod_name" ]] && continue
+    local proxy_present
+    proxy_present="$(kubectl -n "$NAMESPACE" get pod "$pod_name" -o jsonpath='{.spec.containers[?(@.name=="istio-proxy")].name}')"
+    if [[ "$proxy_present" != "istio-proxy" ]]; then
+      echo "El pod ${pod_name} no tiene sidecar istio-proxy en ${description}" >&2
+      exit 1
+    fi
+  done <<<"$pods"
+
+  echo "${description}: sidecar inyectado"
+}
+
 wait_for_http() {
   local name="$1"
   local url="$2"
@@ -90,7 +151,17 @@ trap cleanup EXIT
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/inventory-service --timeout=120s >/dev/null
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/web --timeout=120s >/dev/null
 
+if [[ "$ENVIRONMENT" = "staging" ]]; then
+  kubectl -n istio-system wait --for=condition=available deployment/istiod --timeout=120s >/dev/null
+  kubectl -n istio-system wait --for=condition=available deployment/atlas-platform-istio-ingress --timeout=120s >/dev/null
+  wait_for_sidecar_ready "app=inventory-service" "inventory-service ${ENVIRONMENT}"
+  wait_for_sidecar_ready "app=web" "web ${ENVIRONMENT}"
+fi
+
 if kubectl -n "$NAMESPACE" get job inventory-migration >/dev/null 2>&1; then
+  if [[ "$ENVIRONMENT" = "staging" ]]; then
+    require_sidecar_injection "job-name=inventory-migration" "inventory-migration ${ENVIRONMENT}"
+  fi
   kubectl -n "$NAMESPACE" wait --for=condition=complete job/inventory-migration --timeout=120s >/dev/null
 else
   echo "Migration job ${ENVIRONMENT}: no presente (hook ya limpiado o despliegue sin job persistente)"

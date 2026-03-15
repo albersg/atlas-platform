@@ -29,6 +29,8 @@ staging behavior.
 
 - `platform/argocd/core/` installs Argo CD and the KSOPS integration.
 - `platform/argocd/apps/` defines the application bundle for non-production.
+- `platform/helm/istio/` stores the pinned Helm wrapper charts for the Istio infra layer.
+- `platform/policy/kyverno/` enforces the layered contract across workload and infra renders.
 - `platform/k8s/overlays/*/secrets/*.enc.yaml` stores encrypted secrets.
 - `.sops.yaml` defines how the repo encrypts and decrypts those files.
 - `.gitops-local/` stores ignored local bootstrap material such as age keys and
@@ -136,7 +138,8 @@ mise run gitops-apply-apps
 ```
 
 What it does conceptually: creates the non-production application bundle,
-including `atlas-platform-staging`.
+including `atlas-platform-infra`, the three Istio infra applications, and
+`atlas-platform-staging`.
 
 Success looks like: the staging application exists in Argo CD and points at the
 expected repo and revision.
@@ -148,14 +151,18 @@ Run these commands before you ask Argo CD to reconcile a branch or a new digest:
 ```bash
 mise run gitops-render-dev >/dev/null
 mise run gitops-render-staging >/dev/null
+mise run gitops-render-platform-infra-staging-local >/dev/null
+mise run gitops-render-platform-infra-staging >/dev/null
 mise run k8s-validate-overlays
 ```
 
 What they do conceptually:
 
 - the render commands prove Kustomize plus KSOPS can build the target manifests,
+- the platform-infra render commands prove the Helm-wrapped Istio inputs still produce deterministic YAML,
 - `mise run k8s-validate-overlays` enforces the repo's policy rules across `dev`,
-  `staging`, and `staging-local`,
+  `staging`, `staging-local`, and the rendered Istio infra output,
+- the same validation now runs `istioctl analyze` on the combined mesh surfaces before sync,
 - immutable image and signature rules only apply to canonical `staging`.
 
 Success looks like: rendering succeeds and the validator does not report policy or
@@ -173,9 +180,10 @@ What it does conceptually on local k3s:
 
 1. builds or reuses local `:main` image refs,
 2. imports them into k3s,
-3. points the application at `platform/k8s/overlays/staging-local`,
-4. waits for reconciliation,
-5. runs smoke checks.
+3. points the workload application at `platform/k8s/overlays/staging-local`,
+4. keeps the Istio infra apps on `values-staging-local.yaml`,
+5. waits for the three infra apps and then the workload app,
+6. runs mesh-aware smoke checks.
 
 Success looks like: `atlas-platform-staging` reaches synced and healthy state on
 the local wrapper overlay.

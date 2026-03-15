@@ -15,6 +15,7 @@ generators:
 
 components:
   - ../../components/images/staging-local
+  - ../../components/mesh/istio
 
 patches:
   - target:
@@ -45,25 +46,3 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: IfNotPresent
-  - target:
-      kind: Ingress
-      name: atlas-ingress
-    patch: |-
-      - op: replace
-        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
-        value: websecure
-      - op: add
-        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.tls
-        value: "true"
-      - op: replace
-        path: /spec/rules/0/host
-        value: staging.atlas.example.com
-      - op: replace
-        path: /spec/rules/1/host
-        value: api.staging.atlas.example.com
-      - op: add
-        path: /spec/tls
-        value:
-          - hosts:
-              - staging.atlas.example.com
-              - api.staging.atlas.example.com

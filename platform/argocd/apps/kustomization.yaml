@@ -4,5 +4,9 @@ kind: Kustomization
 namespace: argocd
 
 resources:
+  - project-atlas-platform-infra.yaml
   - project-atlas-platform.yaml
+  - atlas-platform-istio-base.yaml
+  - atlas-platform-istiod.yaml
+  - atlas-platform-istio-ingress.yaml
   - atlas-platform-staging.yaml

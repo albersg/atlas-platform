@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: web
+spec:
+  host: web
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: inventory-service
+spec:
+  host: inventory-service
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN

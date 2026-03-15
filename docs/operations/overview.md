@@ -11,10 +11,12 @@ repository's non-production platform workflows.
 | k3s | the lightweight local Kubernetes distribution used for `dev` and `staging-local` |
 | `kubectl` | the direct CLI for inspecting cluster resources |
 | Kustomize | builds environment-specific overlays from reusable manifest pieces |
+| Helm | packages pinned upstream platform add-ons such as Istio |
 | Argo CD | reconciles Git-defined state into the cluster |
 | GitOps | the operating model that says Git is the desired source of truth |
 | SOPS and age | keep secrets encrypted while still storing them in the repo |
 | KSOPS | decrypts SOPS files during Kustomize rendering |
+| Istio | provides the staged non-production service-mesh layer |
 | Kyverno | enforces repository policy rules over rendered manifests |
 | Trivy, Cosign, Syft, SBOMs | protect the image release and promotion path |
 
@@ -23,11 +25,12 @@ repository's non-production platform workflows.
 1. [Local Compose](local-compose.md)
 2. [k3s dev environment](k3s-dev.md)
 3. [GitOps bootstrap](gitops-bootstrap.md)
-4. [Staging-local](staging-local.md)
-5. [Canonical staging](canonical-staging.md)
-6. [Backup and restore](backup-restore.md)
-7. [Release workflow](release-workflow.md)
-8. [Staging promotion](staging-promotion.md)
+4. [Service mesh](service-mesh.md)
+5. [Staging-local](staging-local.md)
+6. [Canonical staging](canonical-staging.md)
+7. [Backup and restore](backup-restore.md)
+8. [Release workflow](release-workflow.md)
+9. [Staging promotion](staging-promotion.md)
 
 ## Environment model
 
@@ -43,6 +46,8 @@ repository's non-production platform workflows.
 - `dev` is a local k3s lab, not the canonical staging path.
 - `staging-local` exists to learn and validate the topology locally without weakening canonical `staging`.
 - `staging` should consume registry images by digest, not local dev images.
+- Kustomize remains the first-party workload model; Helm is only for upstream platform add-ons.
+- Istio now owns the staged mesh path for `staging-local` and `staging`, while `dev` intentionally stays on Traefik.
 - Kubernetes knowledge matters most from `dev` onward; Compose is intentionally a simpler first step.
 - Production is intentionally outside the repo's current operational scope.
 

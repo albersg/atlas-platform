@@ -1,0 +1,24 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-canonical-staging-mesh-routing
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-canonical-staging-api-virtualservice
+      match:
+        any:
+          - resources:
+              kinds:
+                - VirtualService
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - atlas-api
+      validate:
+        message: Canonical staging must keep API traffic on the mesh-managed hostname.
+        pattern:
+          spec:
+            hosts:
+              - api.staging.atlas.example.com

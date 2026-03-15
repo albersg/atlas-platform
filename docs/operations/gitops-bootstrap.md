@@ -21,6 +21,8 @@ By the end of this guide you should have:
 | age | provides the encryption keys used by SOPS in this repo |
 | KSOPS | lets Kustomize decrypt SOPS-managed files during manifest rendering |
 | Kustomize | assembles the base resources and overlays before Argo CD applies them |
+| Helm | renders the pinned Istio platform wrapper charts before sync |
+| Istio | supplies the upstream base, control plane, and ingress charts |
 | Kyverno | validates rendered manifests against repository policy rules before promotion |
 
 ## Recommended order
@@ -60,11 +62,14 @@ mise run gitops-apply-apps
 ### `mise run gitops-apply-apps`
 
 - applies the non-production Argo CD application bundle,
-- creates the `atlas-platform-staging` application.
+- creates the `atlas-platform-infra` project plus the Istio applications and the `atlas-platform-staging` application,
+- patches the Istio applications to `values-staging-local.yaml` or `values-staging.yaml` based on the target rollout mode.
 
 ## Important notes
 
 - `staging-local` is the local rehearsal path; canonical `staging` remains digest-driven.
+- `mise run gitops-deploy-staging` now waits for `atlas-platform-istio-base`, `atlas-platform-istiod`, and `atlas-platform-istio-ingress` before the Atlas workload app.
+- `mise run k8s-doctor` and `mise run k8s-status-staging` now surface infra-app health separately from workload-app health.
 - Do not commit `.gitops-local/age/keys.txt` or `.gitops-local/ssh/argocd-repo`.
 - If you want to validate a branch before merge, set `ARGOCD_APP_REVISION=<remote-branch-or-commit>`.
 - The repo still uses helper scripts for bootstrap, but once bootstrap is complete Argo CD becomes the system continuously driving cluster state.
@@ -73,4 +78,5 @@ mise run gitops-apply-apps
 
 - [Staging-local](staging-local.md)
 - [Canonical staging](canonical-staging.md)
+- [Service mesh](service-mesh.md)
 - [GitOps runbook](../deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)

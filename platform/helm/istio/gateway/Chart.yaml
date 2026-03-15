@@ -1,0 +1,9 @@
+apiVersion: v2
+name: atlas-platform-istio-ingress
+description: Atlas wrapper chart for the upstream Istio gateway chart.
+type: application
+version: 0.1.0
+dependencies:
+  - name: gateway
+    version: 1.25.3
+    repository: https://istio-release.storage.googleapis.com/charts

@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - require-canonical-staging-images-by-digest.yaml
+  - require-canonical-staging-mesh-routing.yaml

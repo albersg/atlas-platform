@@ -1,0 +1,9 @@
+apiVersion: v2
+name: atlas-platform-istiod
+description: Atlas wrapper chart for the upstream Istio control plane chart.
+type: application
+version: 0.1.0
+dependencies:
+  - name: istiod
+    version: 1.25.3
+    repository: https://istio-release.storage.googleapis.com/charts
