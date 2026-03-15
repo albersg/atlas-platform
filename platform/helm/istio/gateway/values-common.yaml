@@ -1,4 +1,6 @@
 fullnameOverride: atlas-platform-istio-ingress
+labels:
+  istio.io/rev: default
 autoscaling:
   enabled: false
 resources:

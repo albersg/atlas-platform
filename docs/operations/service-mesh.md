@@ -33,10 +33,13 @@ workload onboarding slice for staging overlays.
 ## First-wave traffic shape
 
 - `dev` still serves `atlas.local` and `api.atlas.local` through Traefik.
+- `staging-local` uses a local-only Istio NodePort exposure model so k3s Traefik can keep host ports `80/443` while Atlas traffic still enters through the mesh.
+- canonical `staging` keeps the LoadBalancer-oriented gateway model and does not inherit the local NodePort compromise.
 - `staging-local` and `staging` move Atlas traffic to the Istio ingress gateway on HTTP first, keeping the initial wave simple while hostnames stay stable.
 - frontend traffic on `staging.atlas.example.com` routes `/` to `web` and `/api` to `inventory-service`.
 - API traffic on `api.staging.atlas.example.com` routes directly to `inventory-service`.
 - readiness probes are explicitly rewritten on sidecar-enabled deployments so health checks survive the first mesh cutover.
+- first-wave workloads now carry `istio.io/rev=default`, and the app deployments bound proxy requests/limits to stay inside the namespace quota.
 
 ## Render commands
 
@@ -57,7 +60,7 @@ Use those commands to prove the wrapper charts, pinned versions, environment val
 
 ## What is still pending
 
-- live proof that the full `staging-local` rollout converges end to end on a real cluster,
+- live proof that the full `staging-local` rollout converges end to end on a real cluster from the updated Git state,
 - any post-onboarding hardening beyond the current permissive first wave.
 
 ## Rollback for this slice

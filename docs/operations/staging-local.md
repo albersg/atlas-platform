@@ -20,6 +20,7 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 - imports them into the local k3s runtime,
 - keeps the Istio infra applications pointed at `values-staging-local.yaml`,
 - patches the Argo CD application to use `platform/k8s/overlays/staging-local`,
+- exposes the Istio ingress gateway through fixed local NodePorts instead of competing with k3s Traefik for host ports `80/443`,
 - routes hostname traffic through the Istio ingress gateway instead of the dev Traefik component,
 - injects sidecars only into `web`, `inventory-service`, and `inventory-migration`,
 - waits for synchronization,
@@ -51,7 +52,10 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 
 ## Current mesh notes
 
-- hostnames stay `staging.atlas.example.com` and `api.staging.atlas.example.com`, but the first wave uses HTTP at the gateway until TLS secret handling becomes a later slice,
+- hostnames stay `staging.atlas.example.com` and `api.staging.atlas.example.com`, but `staging-local` reaches them through the Istio gateway NodePort (`32080` for HTTP, `32443` reserved for a later HTTPS cutover) rather than host ports `80/443`,
+- `platform/helm/istio/gateway/values-staging-local.yaml` is intentionally local-only; canonical `staging` keeps the LoadBalancer-facing model,
+- the `atlas-platform-staging` namespace relaxes PodSecurity admission only in `staging-local` because Istio CNI is not installed in the local k3s rehearsal cluster,
+- `web` and `inventory-service` now pin `istio.io/rev=default` plus bounded sidecar resources so injection and quota usage converge from Git,
 - readiness and liveness probes on `web` and `inventory-service` are rewritten for sidecar injection,
 - smoke checks now confirm the Istio ingress deployment plus workload sidecars before hostname probes,
 - PostgreSQL, backup jobs, and restore jobs stay outside the mesh.

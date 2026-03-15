@@ -1,11 +1,15 @@
 min_version = "2026.3.3"
 
 [tools]
+# Pin day-to-day operator CLIs in mise. Keep repo-scoped GitOps helpers in
+# scripts/gitops/bootstrap/install-tools.sh so Helm/Istio/Kyverno/KSOPS stay
+# on one repo-local source of truth instead of drifting across two installers.
 pre-commit = "4.5.1"
 actionlint = "1.7.11"
 python = "3.12.13"
 uv = "0.10.8"
 node = "25.8.0"
+kubectl = "1.34.5"
 ruff = "0.15.5"
 shellcheck = "0.11.0"
 shfmt = "3.12.0"

@@ -78,9 +78,24 @@ class RepoPolicyTests(unittest.TestCase):
     def test_mise_has_pinned_core_tools(self) -> None:
         mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
         tools = mise_data.get("tools", {})
-        for tool in ["python", "node", "uv", "ruff", "pre-commit", "actionlint"]:
+        for tool in ["python", "node", "uv", "ruff", "pre-commit", "actionlint", "kubectl"]:
             self.assertIn(tool, tools)
             self.assertRegex(str(tools[tool]), r"\d+\.\d+\.\d+")
+
+    def test_mise_keeps_gitops_helpers_out_of_duplicate_tool_pins(self) -> None:
+        mise_contents = (ROOT / "mise.toml").read_text(encoding="utf-8")
+        install_tools = (ROOT / "scripts" / "gitops" / "bootstrap" / "install-tools.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Keep repo-scoped GitOps helpers", mise_contents)
+        self.assertIn('HELM_VERSION="v3.16.4"', install_tools)
+        self.assertIn('ISTIOCTL_VERSION="1.25.3"', install_tools)
+        self.assertIn('KYVERNO_VERSION="v1.15.0"', install_tools)
+
+        mise_tools = tomllib.loads(mise_contents).get("tools", {})
+        for tool in ["helm", "istioctl", "kyverno"]:
+            self.assertNotIn(tool, mise_tools)
 
     def test_mise_has_canonical_tasks(self) -> None:
         mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
@@ -372,17 +387,46 @@ class RepoPolicyTests(unittest.TestCase):
             / "patches"
             / "inventory-migration-sidecar-injection.yaml"
         ).read_text(encoding="utf-8")
+        web_patch = (
+            ROOT
+            / "platform"
+            / "k8s"
+            / "components"
+            / "mesh"
+            / "istio"
+            / "patches"
+            / "web-sidecar-injection.yaml"
+        ).read_text(encoding="utf-8")
+        inventory_patch = (
+            ROOT
+            / "platform"
+            / "k8s"
+            / "components"
+            / "mesh"
+            / "istio"
+            / "patches"
+            / "inventory-service-sidecar-injection.yaml"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("web-sidecar-injection.yaml", mesh_component)
         self.assertIn("inventory-service-sidecar-injection.yaml", mesh_component)
         self.assertIn("inventory-migration-sidecar-injection.yaml", mesh_component)
         self.assertIn("inventory-migration", control_plane_policy)
         self.assertNotIn("postgres", control_plane_policy)
+        self.assertIn("istio.io/rev: default", web_patch)
+        self.assertIn("sidecar.istio.io/proxyCPU: 100m", web_patch)
+        self.assertIn("sidecar.istio.io/proxyMemoryLimit: 256Mi", web_patch)
+        self.assertIn("istio.io/rev: default", inventory_patch)
+        self.assertIn("sidecar.istio.io/proxyCPULimit: 300m", inventory_patch)
         self.assertIn('sidecar.istio.io/inject: "true"', migration_patch)
+        self.assertIn("istio.io/rev: default", migration_patch)
 
     def test_staging_mesh_resources_use_mesh_native_http_entrypoint(self) -> None:
         gateway = (
             ROOT / "platform" / "k8s" / "components" / "mesh" / "istio" / "gateway.yaml"
+        ).read_text(encoding="utf-8")
+        staging_local_gateway_values = (
+            ROOT / "platform" / "helm" / "istio" / "gateway" / "values-staging-local.yaml"
         ).read_text(encoding="utf-8")
         virtual_service = (
             ROOT / "platform" / "k8s" / "components" / "mesh" / "istio" / "virtualservice.yaml"
@@ -398,12 +442,38 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("number: 80", gateway)
         self.assertIn("staging.atlas.example.com", virtual_service)
         self.assertIn("api.staging.atlas.example.com", virtual_service)
+        self.assertIn("type: NodePort", staging_local_gateway_values)
+        self.assertIn("nodePort: 32080", staging_local_gateway_values)
+        self.assertIn("nodePort: 32443", staging_local_gateway_values)
         self.assertIn(
             'STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"', smoke_script
         )
         self.assertIn(
+            'STAGING_LOCAL_HTTP_PORT="${ATLAS_STAGING_LOCAL_HTTP_PORT:-32080}"', smoke_script
+        )
+        self.assertIn("staging-local)", smoke_script)
+        self.assertIn(
             'STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"', access_script
         )
+        self.assertIn(
+            'STAGING_LOCAL_HTTP_PORT="${ATLAS_STAGING_LOCAL_HTTP_PORT:-32080}"', access_script
+        )
+        self.assertIn("NodePort del gateway Istio", access_script)
+
+    def test_staging_local_keeps_local_only_mesh_admission_relaxation(self) -> None:
+        staging_local_namespace = (
+            ROOT / "platform" / "k8s" / "overlays" / "staging-local" / "namespace.yaml"
+        ).read_text(encoding="utf-8")
+        staging_namespace = (
+            ROOT / "platform" / "k8s" / "overlays" / "staging" / "namespace.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("pod-security.kubernetes.io/enforce: privileged", staging_local_namespace)
+        self.assertIn("pod-security.kubernetes.io/audit: baseline", staging_local_namespace)
+        self.assertIn("pod-security.kubernetes.io/warn: baseline", staging_local_namespace)
+        self.assertIn("pod-security.kubernetes.io/enforce: baseline", staging_namespace)
+        self.assertIn("pod-security.kubernetes.io/audit: restricted", staging_namespace)
+        self.assertIn("pod-security.kubernetes.io/warn: restricted", staging_namespace)
 
     def test_argocd_app_projects_reflect_platform_boundary(self) -> None:
         apps_kustomization = (
@@ -673,8 +743,12 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn(
             '"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-ingress', deploy_script
         )
+        self.assertIn("ensure_gateway_ready_for_mesh_smoke", deploy_script)
         self.assertIn(
             '"$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging', deploy_script
+        )
+        self.assertIn(
+            '"$ROOT_DIR/scripts/k3s/verify/smoke.sh" "$ARGOCD_ENVIRONMENT"', deploy_script
         )
         self.assertIn('ARGOCD_ENVIRONMENT="${ARGOCD_ENVIRONMENT:-}"', apply_apps)
         self.assertIn('f"        - values-{environment}.yaml"', apply_apps)
