@@ -1,9 +1,8 @@
-# Mapa del repositorio
+# Repository Tour
 
-Esta pagina sirve como indice rapido de donde vive cada responsabilidad tecnica
-dentro de Atlas Platform.
+This page explains where things live and why they are grouped that way.
 
-## Vista general
+## Top-level map
 
 ```text
 .
@@ -17,53 +16,77 @@ dentro de Atlas Platform.
 └── .pre-commit-config.yaml
 ```
 
-## Aplicacion
+## Application code
 
-- `apps/web`: frontend React + Vite + TypeScript.
-- `services/inventory-service`: backend principal con FastAPI, SQLAlchemy y Alembic.
-- `services/billing-service`: scaffold del siguiente bounded context.
+- `apps/web`: the React + Vite frontend.
+- `services/inventory-service`: the active backend service.
+- `services/billing-service`: a placeholder for a future bounded context.
 
-## Plataforma
+If you are changing product behavior, you usually start in `apps/web` or
+`services/inventory-service`.
 
-- `platform/k8s`: recursos base, piezas reutilizables y overlays por entorno.
-- `platform/argocd`: instalacion de Argo CD y aplicaciones GitOps.
-- `platform/policy`: policy-as-code para overlays de entornos no productivos.
+## Platform and delivery assets
 
-## Automatizacion operativa
+- `platform/k8s`: shared manifests, components, and overlays for `dev`, `staging`, and `staging-local`.
+- `platform/argocd`: Argo CD bootstrap and GitOps application definitions.
+- `platform/policy`: policy checks applied to non-production overlays.
 
-- `scripts/k3s`: preflight, build/import de imagenes, accesos y despliegues en k3s.
-- `scripts/gitops`: bootstrap, render, espera y despliegue GitOps.
-- `scripts/release`: helpers para promocion de imagenes por digest.
+If you are changing deployment shape, networking, secrets flow, or image wiring,
+you usually start in `platform/`.
 
-## Calidad, seguridad y gobierno
+## Automation entrypoints
 
-- `mise.toml`: fuente de verdad del toolchain y de las tareas `mise run`.
-- `mise.lock`: metadata de lock para instalaciones reproducibles.
-- `.pre-commit-config.yaml`: hooks de formato, lint y seguridad.
-- `.github/workflows/`: CI, seguridad, CodeQL, release y promocion.
-- `.github/CODEOWNERS`: ownership obligatorio para revision.
-- `tests/`: pruebas de politica del repositorio.
-- `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`: reglas operativas y de colaboracion.
+- `mise.toml`: source of truth for tools and canonical commands.
+- `scripts/k3s`: k3s preflight, image build/import, access, smoke, and cluster helpers.
+- `scripts/gitops`: Argo CD bootstrap, render, deploy, and validation helpers.
+- `scripts/release`: digest promotion and trusted-image verification helpers.
 
-## Documentacion
+## Where major tools show up
 
-- `docs/getting-started`: arranque y orientacion del proyecto.
-- `docs/development`: guias de trabajo diario.
-- `docs/architecture`: principios, topologia y patrones.
-- `docs/adr`: ADRs y decisiones arquitectonicas.
-- `docs/operations`: vistas operativas y runbooks.
-- `docs/reference`: catalogos y mapas tecnicos.
-- `docs/project`: gobierno y modelo operativo.
-
-## Donde tocar segun el tipo de cambio
-
-| Tipo de cambio | Zona principal |
+| Tool or concept | Main repo locations |
 | --- | --- |
-| UI o experiencia web | `apps/web` |
-| API, dominio o persistencia | `services/inventory-service` |
-| Nuevo bounded context | `services/<nuevo-servicio>` |
-| Despliegue Kubernetes | `platform/k8s` |
-| GitOps / Argo CD | `platform/argocd` y `scripts/gitops` |
-| Operacion k3s | `scripts/k3s` |
-| CI, seguridad o automatizacion | `.github/workflows`, `mise.toml`, `.pre-commit-config.yaml` |
-| Documentacion | `README.md` y `docs/` |
+| `mise` | `mise.toml`, plus every guide that uses `mise run ...` |
+| `pre-commit`, `ruff`, `detect-secrets`, `gitleaks`, `pyright` | `.pre-commit-config.yaml` |
+| `uv`, FastAPI, `pytest` | `services/inventory-service/`, `pyproject.toml`, backend tests |
+| `npm`, Vite, TypeScript | `apps/web/`, `apps/web/package.json`, `apps/web/vite.config.ts` |
+| Docker and Docker Compose | `docker-compose.yml`, app Dockerfiles, `scripts/compose/` |
+| Kubernetes, k3s, `kubectl`, Kustomize | `platform/k8s/`, `scripts/k3s/`, `scripts/gitops/render-overlay.sh` |
+| Argo CD, GitOps, SOPS, age, KSOPS | `platform/argocd/`, `platform/k8s/overlays/`, `scripts/gitops/` |
+| Kyverno policies | `platform/policy/kyverno/` |
+| Trivy, Cosign, Syft, SBOM release flow | `.github/workflows/release-images.yml`, `scripts/release/` |
+| GitHub Actions and dependency review | `.github/workflows/` |
+| Dependabot | `.github/dependabot.yml` |
+
+If you want to know what a `mise run` task really does, inspect the matching task
+in `mise.toml` and then the script it calls.
+
+## Documentation and governance
+
+- `docs/`: the learning path, guides, and deep runbooks.
+- `AGENTS.md`: operating contract for agent sessions.
+- `CONTRIBUTING.md`: contributor expectations and pull request rules.
+- `SECURITY.md`: vulnerability reporting and secure development requirements.
+- `.github/workflows/`: the automation that mirrors local validation and release flows.
+
+## Tests and policy checks
+
+- `tests/`: repository policy tests.
+- `services/inventory-service/tests/`: backend tests.
+
+## Where to edit by task type
+
+| If you are changing... | Start here |
+| --- | --- |
+| Web UI | `apps/web` |
+| API, domain rules, persistence, migrations | `services/inventory-service` |
+| Docker-based local stack | `docker-compose.yml` and app folders |
+| k3s overlays or runtime settings | `platform/k8s` |
+| Argo CD or SOPS bootstrap | `platform/argocd` and `scripts/gitops` |
+| Release or digest promotion | `scripts/release` and `platform/k8s/components/images/staging` |
+| Documentation | `README.md` and `docs/` |
+
+## Read next
+
+- [Glossary](../reference/glossary.md)
+- [Daily workflow and change lifecycle](../development/END_TO_END_WORKFLOW.md)
+- [Monorepo component map](../reference/components.md)

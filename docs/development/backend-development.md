@@ -1,76 +1,74 @@
-# Desarrollo backend
+# Backend Development
 
-`inventory-service` es el servicio backend activo del repositorio y sigue una
-arquitectura hexagonal + screaming por capacidad de negocio.
+The active backend service is `services/inventory-service`. It uses FastAPI,
+SQLAlchemy, Alembic, and a hexagonal plus screaming architecture structure.
 
-## Tareas principales
+## Tooling explained
+
+- FastAPI defines the HTTP API surface and interactive docs.
+- `uv` installs and runs the backend's Python tooling without a manually managed virtualenv workflow.
+- PostgreSQL is the main relational database behind persistence features.
+- `pytest` runs backend tests.
+- `pyright` catches Python type issues before runtime.
+
+## What you usually change here
+
+- API routes and request handling
+- domain logic
+- persistence adapters and models
+- migrations
+- backend tests
+
+## Primary commands
 
 ```bash
 mise run backend-dev
 mise run backend-test
 mise run backend-migrate
-mise run typecheck
-```
-
-Tambien puedes ejecutar la suite con cobertura:
-
-```bash
+mise run backend-typecheck
 mise run backend-test-cov
 ```
 
-## Endpoints actuales de `inventory-service`
-
-- `GET /healthz`
-- `GET /readyz`
-- `GET /api/v1/inventory/products`
-- `POST /api/v1/inventory/products`
-- `GET /api/v1/inventory/products/{product_id}`
-
-## Migraciones con Alembic
-
-Alembic es el mecanismo oficial para cambios de esquema.
-
-Rutas relevantes:
-
-- migraciones: `services/inventory-service/alembic/versions/`
-- primera revision: `services/inventory-service/alembic/versions/20260306_0001_create_products_table.py`
-
-Aplicar migraciones:
+## Run the backend locally
 
 ```bash
-mise run backend-migrate
+mise run backend-dev
 ```
 
-Crear una revision manual:
+- Purpose: starts the FastAPI app with reload.
+- Prerequisites: `mise run app-bootstrap`; database access if your work touches persistence.
+- Under the hood: runs `uv run uvicorn inventory_service.main:app --reload --host 0.0.0.0 --port 8000`.
+- Expected output: the API is reachable on `http://localhost:8000`.
+- Useful endpoints: `/healthz`, `/readyz`, `/api/v1/inventory/products`.
+
+## Run backend tests
 
 ```bash
-cd services/inventory-service
-uv run --extra dev alembic revision -m "describe-tu-cambio"
+mise run backend-test
 ```
 
-Previsualizar el SQL generado:
+- Purpose: quick backend-specific test run.
+- Under the hood: runs `pytest -q` inside `services/inventory-service`.
+- Run next: `mise run backend-test-cov` if you want the broader suite or coverage-oriented output.
+
+## Run backend type checking
 
 ```bash
-cd services/inventory-service
-uv run --extra dev alembic upgrade head --sql
+mise run backend-typecheck
 ```
 
-Regla recomendada:
+- Purpose: catch type errors before they become runtime issues.
+- Under the hood: runs `pyright` in the backend project.
 
-- todo cambio en modelos persistentes debe ir acompañado de una migracion Alembic explicita.
+## Architecture expectations
 
-## Observabilidad con Sentry
+- Keep domain and application logic separate from infrastructure.
+- Keep adapters and API layers dependent on inward-facing abstractions.
+- Add migrations when persistent models change.
+- Update docs when the API contract or workflow changes.
 
-Variables opcionales del backend:
+## Read next
 
-- `INVENTORY_SENTRY_DSN`
-- `INVENTORY_SENTRY_TRACES_SAMPLE_RATE`
-
-## Limites arquitectonicos esperados
-
-- dominio y aplicacion separados de infraestructura,
-- adaptadores y API construidos sobre puertos,
-- cambios de persistencia acompañados de tests y migraciones,
-- documentacion actualizada si cambia comportamiento o contrato.
-
-Referencia adicional: `services/inventory-service/README.md`
+- [Database and migrations](database-migrations.md)
+- [Quality and CI](quality-and-ci.md)
+- `services/inventory-service/README.md`

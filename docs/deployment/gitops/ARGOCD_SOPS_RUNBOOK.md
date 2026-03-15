@@ -1,100 +1,149 @@
-# Runbook GitOps con Argo CD, KSOPS y SOPS
+# GitOps Runbook: Argo CD, KSOPS, and SOPS
 
-## Arquitectura
+Use this runbook when you need the full operator workflow for bootstrapping or
+operating the repository's GitOps path. It covers Argo CD installation, SOPS and
+age key handling, repo credentials, local branch validation, and the boundary
+between `staging-local` and canonical `staging`.
 
-- `platform/argocd/core/`: instalación de Argo CD y plugin KSOPS.
-- `platform/argocd/apps/`: bundle GitOps operativo para `staging`.
-- `platform/k8s/overlays/*/secrets/*.enc.yaml`: secrets cifrados con SOPS.
-- `.sops.yaml`: política de cifrado del repositorio.
-- `.gitops-local/`: material local ignorado por git para bootstrap y validación.
+If you are still learning the flow, read these pages first:
 
-## Modelo de entornos
+- [Operations overview](../../operations/overview.md)
+- [GitOps bootstrap](../../operations/gitops-bootstrap.md)
+- [Staging-local](../../operations/staging-local.md)
+- [Canonical staging](../../operations/canonical-staging.md)
 
-- `dev`: entorno local-lab gestionado por `kubectl apply`, fuera de Argo CD.
-- `staging`: entorno preproductivo canónico, auto-sync, prune, self-heal e imágenes desde registry por digest.
-- `staging-local`: wrapper local para validar el flujo GitOps con imágenes `:main` sin debilitar `staging`.
+## Environment model
 
-El alcance operativo actual termina en `staging`.
+| Environment | What GitOps means there | Image source |
+| --- | --- | --- |
+| `dev` | GitOps is not the primary control loop. Helpers render and apply directly. | Local build-specific images. |
+| `staging-local` | Argo CD runs the staging topology on your local cluster. | Local `:main` image refs imported into k3s. |
+| Canonical `staging` | Argo CD reconciles the real pre-production contract. | Registry images pinned by digest. |
 
-## Flujo de bootstrap no production
+When people confuse the environments, it is usually because the command name is
+the same: `mise run gitops-deploy-staging`. On local k3s that command defaults to
+the `staging-local` wrapper. Set `STAGING_LOCAL_IMAGES=0` to force the canonical
+staging behavior.
 
-### 1. Instalar herramientas auxiliares
+## Architecture and files involved
+
+- `platform/argocd/core/` installs Argo CD and the KSOPS integration.
+- `platform/argocd/apps/` defines the application bundle for non-production.
+- `platform/k8s/overlays/*/secrets/*.enc.yaml` stores encrypted secrets.
+- `.sops.yaml` defines how the repo encrypts and decrypts those files.
+- `.gitops-local/` stores ignored local bootstrap material such as age keys and
+  repo SSH credentials.
+
+## Prerequisites
+
+Before you start, make sure you have:
+
+- `mise`, `kubectl`, and the cluster access required to install Argo CD.
+- A local or target cluster already running.
+- Access to the repository you want Argo CD to reconcile.
+- Permission to generate or install the age key used for SOPS decryption.
+- Permission to create the deploy key or other repository credential Argo CD will
+  use.
+
+Run this command first on a new workstation if you are unsure which helper tools
+are already present:
 
 ```bash
 mise run gitops-install-tools
 ```
 
-### 2. Generar la clave age local
+What it does conceptually: installs the local binaries and helper dependencies the
+GitOps scripts rely on.
+
+Success looks like: the install step finishes cleanly and later GitOps scripts no
+longer fail because of missing local tooling.
+
+## Step-by-step bootstrap
+
+Use this order for a first-time non-production bootstrap.
+
+### Step 1: Generate the local age key
 
 ```bash
 ./scripts/gitops/bootstrap/generate-age-key.sh
 ```
 
-### 3. Instalar Argo CD core
+What it does conceptually: creates the local age keypair that SOPS uses to decrypt
+the repository's encrypted secret manifests.
+
+Success looks like: the key material exists under `.gitops-local/age/` and is not
+tracked by Git.
+
+### Step 2: Install Argo CD core and KSOPS
 
 ```bash
 mise run gitops-bootstrap-core
 ```
 
-### 4. Generar la deploy key de GitHub para Argo CD
+What it does conceptually: installs Argo CD core and the KSOPS plugin so the
+cluster can reconcile Kustomize overlays that include SOPS-encrypted files.
+
+Success looks like: the `argocd` namespace and the core Argo CD workloads are
+healthy.
+
+### Step 3: Generate the repository deploy key
 
 ```bash
 ./scripts/gitops/bootstrap/generate-repo-deploy-key.sh
 ```
 
-### 5. Instalar la credential del repositorio en Argo CD
+What it does conceptually: creates the SSH keypair Argo CD will use to read the
+repository over Git.
 
-```bash
-./scripts/gitops/bootstrap/install-repo-credential.sh
-```
+Success looks like: the private key exists under `.gitops-local/ssh/` and the
+public key is ready to register with GitHub.
 
-Por defecto instala la credential para `git@github.com:albersg/atlas-platform.git`
-como el secret `argocd-repo-atlas-platform`. Solo sobreescribe
-`GITOPS_REPO_URL` o `ARGOCD_REPO_SECRET_NAME` si necesitas apuntar a otro repo.
-
-### 6. Instalar la clave privada age en Argo CD
+### Step 4: Install the age key into Argo CD
 
 ```bash
 mise run gitops-install-age-key
 ```
 
-### 7. Aplicar las aplicaciones no productivas
+What it does conceptually: creates or updates the `argocd-sops-age-key` secret so
+KSOPS can decrypt the encrypted manifests inside the cluster.
+
+Success looks like: the command completes without secret-creation errors and
+subsequent render steps can decrypt secrets.
+
+### Step 5: Install the repository credential
+
+```bash
+mise run gitops-install-repo-credential
+```
+
+What it does conceptually: installs the repository credential secret that lets Argo
+CD clone the repo.
+
+Important defaults:
+
+- the default repo URL is `git@github.com:albersg/atlas-platform.git`,
+- the default secret name is `argocd-repo-atlas-platform`.
+
+Only override `GITOPS_REPO_URL` or `ARGOCD_REPO_SECRET_NAME` if you intentionally
+need a different repository target.
+
+Success looks like: Argo CD can access the repo without authentication failures.
+
+### Step 6: Apply the non-production applications
 
 ```bash
 mise run gitops-apply-apps
 ```
 
-Esto aplica:
+What it does conceptually: creates the non-production application bundle,
+including `atlas-platform-staging`.
 
-- `atlas-platform-staging`
+Success looks like: the staging application exists in Argo CD and points at the
+expected repo and revision.
 
-Para probar una rama ya empujada antes del merge:
+## Validate before sync
 
-```bash
-ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-apply-apps
-```
-
-Para esperar sincronización y verificar `staging` de extremo a extremo:
-
-```bash
-ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
-```
-
-En un cluster k3s local, ese commando construye e importa por defecto imágenes locales con las
-refs `ghcr.io/...:main` y parchea temporalmente la Application para usar
-`platform/k8s/overlays/staging-local`. Ese wrapper conserva el render KSOPS y el flujo Argo CD,
-pero evita depender de que GHCR tenga publicadas las tags `:main` durante la validación local.
-El overlay canónico `platform/k8s/overlays/staging` queda reservado al camino registry-first
-con digests inmutables.
-
-Para probar el overlay canónico `platform/k8s/overlays/staging` contra imágenes realmente
-publicadas en registry:
-
-```bash
-STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
-```
-
-## Validación local antes de sincronizar
+Run these commands before you ask Argo CD to reconcile a branch or a new digest:
 
 ```bash
 mise run gitops-render-dev >/dev/null
@@ -102,64 +151,158 @@ mise run gitops-render-staging >/dev/null
 mise run k8s-validate-overlays
 ```
 
-`mise run k8s-validate-overlays` aplica políticas comunes a `dev`, `staging` y `staging-local`,
-pero ejecuta las reglas de inmutabilidad solo sobre `staging` canónico. Además valida que las
-imágenes digest-pinned de `staging` tengan firma Cosign verificable desde el workflow
-`Release Images` de GitHub Actions en `main`.
+What they do conceptually:
 
-## Acceso local a Argo CD
+- the render commands prove Kustomize plus KSOPS can build the target manifests,
+- `mise run k8s-validate-overlays` enforces the repo's policy rules across `dev`,
+  `staging`, and `staging-local`,
+- immutable image and signature rules only apply to canonical `staging`.
+
+Success looks like: rendering succeeds and the validator does not report policy or
+signature failures.
+
+## Sync a branch or revision locally
+
+### Rehearse the staging topology on local k3s
+
+```bash
+ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
+```
+
+What it does conceptually on local k3s:
+
+1. builds or reuses local `:main` image refs,
+2. imports them into k3s,
+3. points the application at `platform/k8s/overlays/staging-local`,
+4. waits for reconciliation,
+5. runs smoke checks.
+
+Success looks like: `atlas-platform-staging` reaches synced and healthy state on
+the local wrapper overlay.
+
+### Force canonical staging behavior
+
+```bash
+STAGING_LOCAL_IMAGES=0 \
+ARGOCD_APP_REVISION=<remote-branch-or-commit> \
+mise run gitops-deploy-staging
+```
+
+What it does conceptually: disables the local-image wrapper and tells Argo CD to
+reconcile the real `platform/k8s/overlays/staging` path instead.
+
+Use this only when the required registry images already exist and you want the real
+digest-driven staging contract.
+
+Success looks like: the application syncs the canonical overlay, not the local
+wrapper, and the environment stays healthy under staging-only policy rules.
+
+## Inspect and access Argo CD locally
+
+### Log in
 
 ```bash
 ./scripts/gitops/argocd/login-local.sh
 ```
 
+What it does conceptually: opens the local access path for Argo CD and authenticates
+your CLI or browser session.
+
+### Get the initial password
+
 ```bash
 ./scripts/gitops/argocd/get-initial-password.sh
 ```
 
-## Política de sync
+Use this when you need the bootstrap admin password for the local Argo CD install.
 
-- `atlas-platform-staging`: auto-sync, prune y self-heal.
+Success looks like: you can reach the Argo CD UI or CLI and inspect the
+`atlas-platform-staging` application directly.
 
-Antes de destruir `staging`, usa el teardown GitOps-aware:
+## Sync policy and teardown
+
+- `atlas-platform-staging` is configured for auto-sync, prune, and self-heal.
+- This is why direct manual cluster edits are not the long-term source of truth for
+  staging.
+
+Before you destroy staging, use the GitOps-aware teardown:
 
 ```bash
 ATLAS_CONFIRM_STAGING_DELETE=atlas-platform-staging mise run k8s-delete-staging
 ```
 
-Ese flujo elimina primero la `Application` sin cascada para evitar que `self-heal`
-recree recursos mientras se limpian los workloads. El `Namespace` y los PVC se
-preservan por defecto salvo `PRESERVE_POSTGRES_PVC=0`.
+What it does conceptually:
 
-## Promoción de imágenes
+1. removes the Argo CD application without cascading first,
+2. prevents self-heal from recreating resources while cleanup runs,
+3. preserves the namespace and PVC by default unless
+   `PRESERVE_POSTGRES_PVC=0` is set.
 
-La promoción correcta ya no es por tags mutables sino por digest.
+Success looks like: the application is gone and the remaining resources match your
+chosen teardown scope.
 
-`staging` debe consumir imágenes publicadas en registry. El workflow de promoción exige `SOPS_AGE_KEY`
-para validar el overlay antes de abrir la PR y ahora rechaza digests sin firma verificable.
+## SOPS key rotation
 
-Si solo quieres un preflight local de render/política sin exigir el camino GitOps endurecido,
-usa `ATLAS_DOCTOR_SCOPE=dev mise run k8s-doctor`.
+If you rotate the age keypair, do this in order:
 
-Consulta:
+1. update `.sops.yaml`,
+2. re-encrypt `platform/k8s/overlays/*/secrets/*.enc.yaml`,
+3. update `argocd-sops-age-key` in the target cluster,
+4. rerun local render validation,
+5. resync Argo CD.
 
-- `docs/deployment/releases/IMAGE_PROMOTION.md`
+What success looks like: encrypted secrets still render locally and Argo CD resumes
+normal reconciliation without decryption failures.
 
-## Rotación de claves SOPS
+## Security rules for this workflow
 
-Si rotas la pareja de claves age:
+- Never commit `.gitops-local/age/keys.txt`.
+- Never commit `.gitops-local/ssh/argocd-repo`.
+- Treat the `argocd` namespace as sensitive operational space.
+- Keep `dev`, `staging-local`, and canonical `staging` conceptually separate.
+- Provide `SOPS_AGE_KEY` to CI or promotion workflows that need encrypted overlay
+  validation.
+- Production remains intentionally outside the repo's current GitOps scope.
 
-1. actualiza `.sops.yaml`,
-2. re-cifra `platform/k8s/overlays/*/secrets/*.enc.yaml`,
-3. actualiza `argocd-sops-age-key` en el cluster correspondiente,
-4. vuelve a renderizar overlays localmente,
-5. re-sincroniza Argo CD.
+## Quick troubleshooting map
 
-## Notas de seguridad
+### Argo CD cannot clone the repo
 
-- no commits `.gitops-local/age/keys.txt`,
-- no commits `.gitops-local/ssh/argocd-repo`,
-- trata el namespace `argocd` como sensible,
-- mantén `dev` y `staging` como frontera no productiva,
-- configura `SOPS_AGE_KEY` en GitHub Actions para validar overlays cifrados en CI y promoción,
-- deja producción fuera de este flujo hasta tener infraestructura separada.
+- verify the GitHub deploy key is registered,
+- rerun `mise run gitops-install-repo-credential`,
+- confirm `GITOPS_REPO_URL` still matches the expected repository.
+
+### KSOPS or SOPS decryption fails
+
+- verify the local or in-cluster age key is the correct one,
+- rerun `mise run gitops-install-age-key`,
+- rerun the local render commands before syncing again.
+
+### The application stays out of sync
+
+- confirm `ARGOCD_APP_REVISION` points to a reachable remote branch or commit,
+- run `mise run gitops-wait-staging` after fixing the underlying error,
+- inspect the Argo CD UI for the exact resource diff or render failure.
+
+### Policy validation fails for canonical staging
+
+- confirm the target images were published and signed by the trusted release
+  workflow,
+- switch to the [image promotion runbook](../releases/IMAGE_PROMOTION.md) if the
+  problem is digest or signature related.
+
+## What success looks like overall
+
+You can:
+
+- bootstrap Argo CD and encrypted manifest support from scratch,
+- explain why `staging-local` and canonical `staging` are different,
+- validate renders before sync,
+- reconcile the correct overlay for the task,
+- rotate keys or tear down staging without bypassing guardrails.
+
+## Read next
+
+- [Image promotion runbook](../releases/IMAGE_PROMOTION.md)
+- [k3s runbook](../k3s/RUNBOOK.md)
+- [Troubleshooting](../../reference/troubleshooting.md)

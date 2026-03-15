@@ -1,59 +1,53 @@
-# Documentación de Atlas Platform
+# Atlas Platform Docs
 
-Atlas Platform concentra en un mismo repositorio la documentación de desarrollo,
-arquitectura, operación y gobierno del proyecto. El objetivo es que cualquier
-persona o agente pueda encontrar rápidamente el flujo correcto sin perder
-detalle técnico.
+This documentation is organized as a learning path. Start with the beginner
+guides, then move into development workflows, then use the operational runbooks
+only when you need deeper platform detail.
 
-## Empieza aquí
+## Recommended reading order
 
-- Si es tu primera vez: [Quickstart](getting-started/quickstart.md)
-- Si necesitas ubicarte en el repo: [Mapa del repositorio](getting-started/repository-map.md)
-- Si quieres implementar una feature: [Flujo end-to-end](development/END_TO_END_WORKFLOW.md)
-- Si necesitas operar `dev` o `staging`: [Panorama operativo](operations/overview.md)
+1. [What is Atlas Platform?](getting-started/what-is-atlas-platform.md)
+2. [Learning path](getting-started/learning-path.md)
+3. [First-day setup](getting-started/quickstart.md)
+4. [Repository tour](getting-started/repository-map.md)
+5. [Glossary](reference/glossary.md)
+6. [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md)
+7. [Local development](development/local-development.md)
+8. [Backend development](development/backend-development.md)
+9. [Frontend development](development/frontend-development.md)
+10. [Quality and CI](development/quality-and-ci.md)
+11. [Operations overview](operations/overview.md)
 
-## Navegación por tarea
+## Choose your next guide
 
-| Necesito... | Documento |
+| If you want to... | Read this next |
 | --- | --- |
-| Arrancar el proyecto y validar el entorno | [Quickstart](getting-started/quickstart.md) |
-| Entender el loop local diario | [Desarrollo local](development/local-development.md) |
-| Trabajar en `inventory-service` y sus migraciones | [Desarrollo backend](development/backend-development.md) |
-| Trabajar en `apps/web` | [Desarrollo frontend](development/frontend-development.md) |
-| Ejecutar calidad, seguridad y CI local | [Calidad y CI](development/quality-and-ci.md) |
-| Revisar los principios de arquitectura | [Resumen de arquitectura](architecture/overview.md) |
-| Consultar ADRs del proyecto | [Indice de ADRs](adr/index.md) |
-| Operar k3s, Argo CD y promocion por digest | [Operaciones](operations/overview.md) |
-| Ver el catálogo de tareas `mise` | [Tareas canónicas](reference/commands.md) |
-| Consultar reglas de colaboración y seguridad | [Gobernanza](project/governance.md) |
+| Understand the purpose and boundaries of the repo | [What is Atlas Platform?](getting-started/what-is-atlas-platform.md) |
+| Set up your machine on day one | [First-day setup](getting-started/quickstart.md) |
+| Learn where code and platform assets live | [Repository tour](getting-started/repository-map.md) |
+| Learn the standard developer loop | [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md) |
+| Run the whole app locally | [Local Compose](operations/local-compose.md) |
+| Change backend code or migrations | [Backend development](development/backend-development.md) and [Database and migrations](development/database-migrations.md) |
+| Change frontend code | [Frontend development](development/frontend-development.md) |
+| Update docs safely | [Docs workflow](development/docs-workflow.md) |
+| Understand validation and GitHub Actions | [Quality and CI](development/quality-and-ci.md) |
+| Learn k3s, GitOps, staging, or promotion | [Operations overview](operations/overview.md) |
+| Look up commands, env vars, or error recovery | [Command reference](reference/commands.md), [Configuration reference](reference/configuration.md), and [Troubleshooting](reference/troubleshooting.md) |
 
-## Modelo actual de entornos
+## Environment journey
 
-| Entorno | Uso principal | Modelo |
+| Stage | What you learn | Primary guide |
 | --- | --- | --- |
-| Local | Desarrollo rápido | Docker Compose o procesos locales |
-| `dev` | Laboratorio k3s local | k3s + imágenes locales |
-| `staging` | Validación GitOps preproductiva | Argo CD + SOPS + GHCR |
+| Local | App development, validation, and docs work | [Local development](development/local-development.md) |
+| `dev` | Kubernetes overlays and smoke checks on local k3s | [k3s dev environment](operations/k3s-dev.md) |
+| `staging-local` | Local rehearsal of the GitOps topology | [Staging-local](operations/staging-local.md) |
+| `staging` | Canonical GitOps deployment and digest promotion | [Canonical staging](operations/canonical-staging.md) |
 
-`prod` está fuera del alcance operativo actual del repositorio.
+## Deep runbooks
 
-## Camino de validación canónico
+Use these after the overview pages have oriented you:
 
-```bash
-mise run fmt
-mise run lint
-mise run typecheck
-mise run test
-mise run docs-build
-mise run check
-mise run ci
-```
-
-## Estructura de la documentación
-
-- Primeros pasos: arranque, entorno y mapa del repo.
-- Desarrollo: loops diarios, backend, frontend, calidad y actualización de paquetes.
-- Arquitectura: principios, topología y ADRs.
-- Operaciones: `dev`, `staging`, k3s, GitOps y promoción de imágenes.
-- Referencia: tareas canónicas y estructura técnica.
-- Proyecto: gobierno, reglas de colaboración, troubleshooting y modelo operativo.
+- [k3s runbook](deployment/k3s/RUNBOOK.md)
+- [GitOps runbook](deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)
+- [Image promotion runbook](deployment/releases/IMAGE_PROMOTION.md)
+- [Agent-first DevSecOps playbook](AGENT_FIRST_DEVSECOPS_PLAYBOOK.md)
