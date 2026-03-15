@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -39,6 +40,7 @@ class RepoPolicyTests(unittest.TestCase):
             "scripts/gitops/validate-overlays.sh",
             "scripts/gitops/deploy/staging.sh",
             "scripts/gitops/wait-app.sh",
+            "scripts/compose/require-compose.sh",
             "scripts/k3s/cluster/doctor.sh",
             "scripts/k3s/postgres/lib.sh",
             "scripts/k3s/postgres/backup.sh",
@@ -181,6 +183,19 @@ class RepoPolicyTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertNotIn("newTag:", contents)
         self.assertEqual(contents.count("digest: sha256:"), 2)
+
+    def test_canonical_staging_rejects_placeholder_digests_in_repo(self) -> None:
+        contents = (
+            ROOT / "platform" / "k8s" / "components" / "images" / "staging" / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn(
+            "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            contents,
+        )
+        self.assertNotIn(
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            contents,
+        )
 
     def test_staging_local_is_the_only_mutable_staging_exception(self) -> None:
         staging_local = (
@@ -402,6 +417,44 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("ATLAS_VALIDATE_PREFLIGHT=1", contents)
         self.assertIn("argocd-repo-atlas-platform", contents)
         self.assertIn("cosign", contents)
+        self.assertIn("Salud operativa staging", contents)
+        self.assertIn("atlas-platform-staging", contents)
+
+    def test_doctor_and_compose_tasks_preflight_docker_compose(self) -> None:
+        mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
+        doctor_task = mise_data["tasks"]["doctor"]
+        self.assertNotIn("./scripts/compose/require-compose.sh --quiet", doctor_task["run"])
+        doctor_script = (ROOT / "scripts" / "k3s" / "cluster" / "doctor.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("check_docker_compose", doctor_script)
+        self.assertIn("docker compose version", doctor_script)
+        self.assertEqual(
+            mise_data["tasks"]["compose-up"]["run"],
+            "./scripts/compose/require-compose.sh up --build -d",
+        )
+        self.assertEqual(
+            mise_data["tasks"]["compose-down"]["run"],
+            "./scripts/compose/require-compose.sh down",
+        )
+        self.assertEqual(
+            mise_data["tasks"]["compose-logs"]["run"],
+            "./scripts/compose/require-compose.sh logs -f --tail=200",
+        )
+
+    def test_frontend_quality_gates_are_included_in_mise_validation(self) -> None:
+        mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
+        self.assertEqual(
+            mise_data["tasks"]["frontend-typecheck"]["run"],
+            "cd apps/web && npm run typecheck",
+        )
+        self.assertIn("mise run frontend-typecheck", mise_data["tasks"]["typecheck"]["run"])
+        self.assertIn("mise run frontend-build", mise_data["tasks"]["check"]["run"])
+
+        package_data = json.loads(
+            (ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(package_data["scripts"]["typecheck"], "tsc --noEmit")
 
     def test_postgres_backup_restore_tasks_are_wired(self) -> None:
         mise_data = tomllib.loads((ROOT / "mise.toml").read_text(encoding="utf-8"))
