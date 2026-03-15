@@ -6,7 +6,7 @@ metadata:
 spec:
   project: atlas-platform
   source:
-    repoURL: git@github.com:albersg/agent-first-codex.git
+    repoURL: git@github.com:albersg/atlas-platform.git
     targetRevision: main
     path: platform/k8s/overlays/staging
     plugin:

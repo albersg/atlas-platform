@@ -81,7 +81,7 @@ if [[ "$DOCTOR_SCOPE" = "staging" || "$DOCTOR_SCOPE" = "all" ]]; then
   check_kubectl_resource "Argo CD server disponible" -n argocd get deployment argocd-server
   check_kubectl_resource "secreto argocd-sops-age-key presente" -n argocd get secret argocd-sops-age-key
 
-  if kubectl -n argocd get secret argocd-repo-agent-first-codex >/dev/null 2>&1; then
+  if kubectl -n argocd get secret argocd-repo-atlas-platform >/dev/null 2>&1; then
     echo "[ok] credential del repositorio presente en argocd"
   else
     record_failure "[fail] falta la credential del repositorio en argocd. Ejecuta 'mise run gitops-install-repo-credential'."

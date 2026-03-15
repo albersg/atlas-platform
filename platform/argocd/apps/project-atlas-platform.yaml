@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Atlas platform applications managed through Argo CD and SOPS.
   sourceRepos:
-    - git@github.com:albersg/agent-first-codex.git
+    - git@github.com:albersg/atlas-platform.git
   destinations:
     - namespace: atlas-platform-staging
       server: https://kubernetes.default.svc
