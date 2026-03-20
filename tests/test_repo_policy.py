@@ -407,6 +407,9 @@ class RepoPolicyTests(unittest.TestCase):
             / "patches"
             / "inventory-service-sidecar-injection.yaml"
         ).read_text(encoding="utf-8")
+        migrate_script = (
+            ROOT / "services" / "inventory-service" / "scripts" / "migrate.sh"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("web-sidecar-injection.yaml", mesh_component)
         self.assertIn("inventory-service-sidecar-injection.yaml", mesh_component)
@@ -420,6 +423,9 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("sidecar.istio.io/proxyCPULimit: 300m", inventory_patch)
         self.assertIn('sidecar.istio.io/inject: "true"', migration_patch)
         self.assertIn("istio.io/rev: default", migration_patch)
+        self.assertIn("ISTIO_QUIT_SIDECAR_ON_EXIT", migration_patch)
+        self.assertIn("ISTIO_QUIT_SIDECAR_ON_EXIT", migrate_script)
+        self.assertIn("quitquitquit", migrate_script)
 
     def test_staging_mesh_resources_use_mesh_native_http_entrypoint(self) -> None:
         gateway = (
@@ -442,7 +448,10 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("number: 80", gateway)
         self.assertIn("staging.atlas.example.com", virtual_service)
         self.assertIn("api.staging.atlas.example.com", virtual_service)
-        self.assertIn("type: NodePort", staging_local_gateway_values)
+        self.assertIn(
+            "gateway:\n  service:\n    annotations: {}\n    type: NodePort",
+            staging_local_gateway_values,
+        )
         self.assertIn("nodePort: 32080", staging_local_gateway_values)
         self.assertIn("nodePort: 32443", staging_local_gateway_values)
         self.assertIn(
@@ -459,6 +468,23 @@ class RepoPolicyTests(unittest.TestCase):
             'STAGING_LOCAL_HTTP_PORT="${ATLAS_STAGING_LOCAL_HTTP_PORT:-32080}"', access_script
         )
         self.assertIn("NodePort del gateway Istio", access_script)
+
+    def test_istio_argocd_apps_ignore_webhook_mutations(self) -> None:
+        base_app = (
+            ROOT / "platform" / "argocd" / "apps" / "atlas-platform-istio-base.yaml"
+        ).read_text(encoding="utf-8")
+        istiod_app = (
+            ROOT / "platform" / "argocd" / "apps" / "atlas-platform-istiod.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("RespectIgnoreDifferences=true", base_app)
+        self.assertIn("name: istiod-default-validator", base_app)
+        self.assertIn(".webhooks[]?.clientConfig.caBundle", base_app)
+        self.assertIn(".webhooks[]?.failurePolicy", base_app)
+        self.assertIn("RespectIgnoreDifferences=true", istiod_app)
+        self.assertIn("name: istio-sidecar-injector", istiod_app)
+        self.assertIn("name: istio-validator-istio-system", istiod_app)
+        self.assertIn(".webhooks[]?.clientConfig.caBundle", istiod_app)
 
     def test_staging_local_keeps_local_only_mesh_admission_relaxation(self) -> None:
         staging_local_namespace = (

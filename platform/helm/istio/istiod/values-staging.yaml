@@ -1,4 +1,5 @@
-pilot:
-  autoscaleEnabled: true
-  autoscaleMin: 2
-  autoscaleMax: 3
+istiod:
+  pilot:
+    autoscaleEnabled: true
+    autoscaleMin: 2
+    autoscaleMax: 3

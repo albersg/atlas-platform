@@ -1,14 +1,15 @@
 global:
   istioNamespace: istio-system
-meshConfig:
-  accessLogFile: /dev/stdout
-pilot:
-  autoscaleEnabled: false
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+istiod:
+  meshConfig:
+    accessLogFile: /dev/stdout
+  pilot:
+    autoscaleEnabled: false
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi

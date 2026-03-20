@@ -10,3 +10,9 @@ spec:
         sidecar.istio.io/inject: "true"
       labels:
         istio.io/rev: default
+    spec:
+      containers:
+        - name: inventory-migration
+          env:
+            - name: ISTIO_QUIT_SIDECAR_ON_EXIT
+              value: "true"

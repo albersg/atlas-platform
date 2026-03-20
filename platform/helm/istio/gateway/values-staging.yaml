@@ -1,2 +1,3 @@
-service:
-  annotations: {}
+gateway:
+  service:
+    annotations: {}
