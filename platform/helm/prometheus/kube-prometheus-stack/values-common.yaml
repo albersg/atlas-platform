@@ -5,10 +5,10 @@ kube-prometheus-stack:
   alertmanager:
     enabled: false
 
-  kubeStateMetrics:
+  prometheus-node-exporter:
     enabled: false
 
-  nodeExporter:
+  kube-state-metrics:
     enabled: false
 
   defaultRules:

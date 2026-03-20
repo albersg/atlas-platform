@@ -349,6 +349,7 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("name: atlas-platform-prometheus", prometheus_chart)
         self.assertIn("kube-prometheus-stack", prometheus_chart)
         self.assertIn("kube-prometheus-stack:", prometheus_values)
+        self.assertIn("grafana:", prometheus_values)
         self.assertIn("admissionWebhooks:", prometheus_values)
         self.assertIn("defaultRules:", prometheus_values)
         self.assertIn("name: atlas-platform-prometheus", prometheus_app)
