@@ -25,6 +25,7 @@ mise run k8s-access-staging
 
 - it uses `platform/k8s/overlays/staging`, not `staging-local`,
 - it has a parallel `platform/helm/istio/*/values-staging.yaml` render surface and the same mesh workload component shape as `staging-local`,
+- it does not reuse the `staging-local` NodePort exposure model or local PodSecurity relaxation,
 - it expects registry-backed images,
 - it relies on immutable digests for promotion,
 - staging-only hardening rules apply here,

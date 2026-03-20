@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
-  echo "Uso: $0 <dev|staging> <namespace> [frontend-host] [api-host]" >&2
+  echo "Uso: $0 <dev|staging|staging-local> <namespace> [frontend-host] [api-host]" >&2
   exit 1
 fi
 
@@ -11,6 +11,9 @@ NAMESPACE="$2"
 FRONTEND_HOST="${3:-}"
 API_HOST="${4:-}"
 STAGING_INGRESS_SCHEME="${ATLAS_STAGING_INGRESS_SCHEME:-http}"
+STAGING_LOCAL_INGRESS_SCHEME="${ATLAS_STAGING_LOCAL_INGRESS_SCHEME:-http}"
+STAGING_LOCAL_HTTP_PORT="${ATLAS_STAGING_LOCAL_HTTP_PORT:-32080}"
+STAGING_LOCAL_HTTPS_PORT="${ATLAS_STAGING_LOCAL_HTTPS_PORT:-32443}"
 
 case "$ENVIRONMENT" in
   dev)
@@ -23,6 +26,18 @@ case "$ENVIRONMENT" in
     FRONTEND_HOST="${FRONTEND_HOST:-staging.atlas.example.com}"
     API_HOST="${API_HOST:-api.staging.atlas.example.com}"
     INGRESS_SCHEME="$STAGING_INGRESS_SCHEME"
+    INGRESS_PORT="$([ "$INGRESS_SCHEME" = "https" ] && printf '443' || printf '80')"
+    if [ "$INGRESS_SCHEME" = "https" ]; then
+      CURL_TLS_ARGS=(-k)
+    else
+      CURL_TLS_ARGS=()
+    fi
+    ;;
+  staging-local)
+    FRONTEND_HOST="${FRONTEND_HOST:-staging.atlas.example.com}"
+    API_HOST="${API_HOST:-api.staging.atlas.example.com}"
+    INGRESS_SCHEME="$STAGING_LOCAL_INGRESS_SCHEME"
+    INGRESS_PORT="$([ "$INGRESS_SCHEME" = "https" ] && printf '%s' "$STAGING_LOCAL_HTTPS_PORT" || printf '%s' "$STAGING_LOCAL_HTTP_PORT")"
     if [ "$INGRESS_SCHEME" = "https" ]; then
       CURL_TLS_ARGS=(-k)
     else
@@ -151,7 +166,7 @@ trap cleanup EXIT
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/inventory-service --timeout=120s >/dev/null
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/web --timeout=120s >/dev/null
 
-if [[ "$ENVIRONMENT" = "staging" ]]; then
+if [[ "$ENVIRONMENT" = "staging" || "$ENVIRONMENT" = "staging-local" ]]; then
   kubectl -n istio-system wait --for=condition=available deployment/istiod --timeout=120s >/dev/null
   kubectl -n istio-system wait --for=condition=available deployment/atlas-platform-istio-ingress --timeout=120s >/dev/null
   wait_for_sidecar_ready "app=inventory-service" "inventory-service ${ENVIRONMENT}"
@@ -159,7 +174,7 @@ if [[ "$ENVIRONMENT" = "staging" ]]; then
 fi
 
 if kubectl -n "$NAMESPACE" get job inventory-migration >/dev/null 2>&1; then
-  if [[ "$ENVIRONMENT" = "staging" ]]; then
+  if [[ "$ENVIRONMENT" = "staging" || "$ENVIRONMENT" = "staging-local" ]]; then
     require_sidecar_injection "job-name=inventory-migration" "inventory-migration ${ENVIRONMENT}"
   fi
   kubectl -n "$NAMESPACE" wait --for=condition=complete job/inventory-migration --timeout=120s >/dev/null
@@ -180,15 +195,15 @@ wait_for_http "API list ${ENVIRONMENT}" "http://127.0.0.1:${API_PORT}/api/v1/inv
 wait_for_http "Frontend ${ENVIRONMENT}" "http://127.0.0.1:${WEB_PORT}/" "$TMP_DIR/web-port-forward.log"
 wait_for_http \
   "Ingress frontend ${ENVIRONMENT}" \
-  "${INGRESS_SCHEME}://${FRONTEND_HOST}/" \
+  "${INGRESS_SCHEME}://${FRONTEND_HOST}:${INGRESS_PORT}/" \
   "$TMP_DIR/web-port-forward.log" \
   "${CURL_TLS_ARGS[@]}" \
-  --resolve "${FRONTEND_HOST}:$([ "$INGRESS_SCHEME" = "https" ] && printf '443' || printf '80'):${NODE_IP}"
+  --resolve "${FRONTEND_HOST}:${INGRESS_PORT}:${NODE_IP}"
 wait_for_http \
   "Ingress API ${ENVIRONMENT}" \
-  "${INGRESS_SCHEME}://${API_HOST}/api/v1/inventory/products" \
+  "${INGRESS_SCHEME}://${API_HOST}:${INGRESS_PORT}/api/v1/inventory/products" \
   "$TMP_DIR/api-port-forward.log" \
   "${CURL_TLS_ARGS[@]}" \
-  --resolve "${API_HOST}:$([ "$INGRESS_SCHEME" = "https" ] && printf '443' || printf '80'):${NODE_IP}"
+  --resolve "${API_HOST}:${INGRESS_PORT}:${NODE_IP}"
 
 echo "Smoke checks ${ENVIRONMENT} completados."

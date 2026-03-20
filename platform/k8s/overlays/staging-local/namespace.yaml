@@ -5,6 +5,6 @@ metadata:
   labels:
     app.kubernetes.io/part-of: atlas-platform
     atlas-platform.io/environment: staging
-    pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/audit: restricted
-    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline

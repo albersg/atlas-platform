@@ -23,6 +23,17 @@ fi
 export ARGOCD_APP_PATH
 export ARGOCD_ENVIRONMENT
 
+ensure_gateway_ready_for_mesh_smoke() {
+  local pod_images
+
+  pod_images="$(kubectl -n istio-system get pods -l app=atlas-platform-istio-ingress -o jsonpath='{range .items[*]}{.spec.containers[?(@.name=="istio-proxy")].image}{"\n"}{end}' 2>/dev/null || true)"
+  if grep -qx 'auto' <<<"$pod_images"; then
+    echo "Istio ingress aun tiene pods con image=auto; reiniciando el deployment una vez tras la disponibilidad de istiod."
+    kubectl -n istio-system rollout restart deployment/atlas-platform-istio-ingress >/dev/null
+    kubectl -n istio-system rollout status deployment/atlas-platform-istio-ingress --timeout="${ARGOCD_WAIT_TIMEOUT_SECONDS}s"
+  fi
+}
+
 ATLAS_DOCTOR_SCOPE=staging "$ROOT_DIR/scripts/k3s/cluster/doctor.sh"
 
 if [[ "$STAGING_LOCAL_IMAGES" != "1" ]]; then
@@ -48,8 +59,9 @@ fi
 "$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-base argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
 "$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istiod argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
 "$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-ingress argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
+ensure_gateway_ready_for_mesh_smoke
 "$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-staging argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
 "$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging
-"$ROOT_DIR/scripts/k3s/verify/smoke.sh" staging atlas-platform-staging staging.atlas.example.com api.staging.atlas.example.com
+"$ROOT_DIR/scripts/k3s/verify/smoke.sh" "$ARGOCD_ENVIRONMENT" atlas-platform-staging staging.atlas.example.com api.staging.atlas.example.com
 
 echo "Despliegue staging via Argo CD completado."
