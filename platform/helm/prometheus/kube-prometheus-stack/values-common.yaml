@@ -11,6 +11,13 @@ kube-prometheus-stack:
   kube-state-metrics:
     enabled: false
 
+  defaultRules:
+    create: false
+
+  prometheusOperator:
+    admissionWebhooks:
+      enabled: false
+
   prometheus:
     service:
       type: ClusterIP

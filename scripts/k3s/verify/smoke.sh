@@ -192,6 +192,7 @@ WEB_PID=$!
 
 wait_for_http "API readiness ${ENVIRONMENT}" "http://127.0.0.1:${API_PORT}/readyz" "$TMP_DIR/api-port-forward.log"
 wait_for_http "API list ${ENVIRONMENT}" "http://127.0.0.1:${API_PORT}/api/v1/inventory/products" "$TMP_DIR/api-port-forward.log"
+wait_for_http "API metrics ${ENVIRONMENT}" "http://127.0.0.1:${API_PORT}/metrics" "$TMP_DIR/api-port-forward.log"
 wait_for_http "Frontend ${ENVIRONMENT}" "http://127.0.0.1:${WEB_PORT}/" "$TMP_DIR/web-port-forward.log"
 wait_for_http \
   "Ingress frontend ${ENVIRONMENT}" \
