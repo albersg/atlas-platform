@@ -1,23 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: atlas-platform-istiod
+  name: atlas-platform-prometheus
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   project: atlas-platform-infra
   source:
     repoURL: git@github.com:albersg/atlas-platform.git
     targetRevision: main
-    path: platform/helm/istio/istiod
+    path: platform/helm/prometheus/kube-prometheus-stack
     helm:
       valueFiles:
         - values-common.yaml
         - values-staging-local.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: istio-system
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
@@ -32,16 +32,3 @@ spec:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - ApplyOutOfSyncOnly=true
-      - RespectIgnoreDifferences=true
-  ignoreDifferences:
-    - group: admissionregistration.k8s.io
-      kind: MutatingWebhookConfiguration
-      name: istio-sidecar-injector
-      jqPathExpressions:
-        - .webhooks[]?.clientConfig.caBundle
-    - group: admissionregistration.k8s.io
-      kind: ValidatingWebhookConfiguration
-      name: istio-validator-istio-system
-      jqPathExpressions:
-        - .webhooks[]?.clientConfig.caBundle
-        - .webhooks[]?.failurePolicy

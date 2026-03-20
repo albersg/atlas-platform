@@ -1,21 +1,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: inventory-migration
+  name: {{ .Values.inventoryMigration.name }}
   annotations:
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
     argocd.argoproj.io/sync-wave: "1"
+  labels:
+    {{- include "atlas-workloads.labels" . | nindent 4 }}
 spec:
   completions: 1
   parallelism: 1
-  backoffLimit: 3
-  ttlSecondsAfterFinished: 3600
-  activeDeadlineSeconds: 900
+  backoffLimit: {{ .Values.inventoryMigration.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.inventoryMigration.ttlSecondsAfterFinished }}
+  activeDeadlineSeconds: {{ .Values.inventoryMigration.activeDeadlineSeconds }}
   template:
     metadata:
       labels:
-        app: inventory-migration
+        app: {{ .Values.inventoryMigration.name }}
     spec:
       automountServiceAccountToken: false
       restartPolicy: OnFailure
@@ -23,10 +25,11 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: inventory-migration
-          image: ghcr.io/albersg/atlas-inventory-service:main
-          imagePullPolicy: IfNotPresent
-          command: ["/app/scripts/migrate.sh"]
+        - name: {{ .Values.inventoryMigration.name }}
+          image: {{ include "atlas-workloads.image" .Values.inventoryMigration.image | quote }}
+          imagePullPolicy: {{ .Values.inventoryMigration.image.pullPolicy }}
+          command:
+            {{- toYaml .Values.inventoryMigration.command | nindent 12 }}
           env:
             - name: INVENTORY_DATABASE_URL
               valueFrom:
@@ -34,23 +37,19 @@ spec:
                   name: inventory-secrets
                   key: INVENTORY_DATABASE_URL
             - name: DB_WAIT_MAX_ATTEMPTS
-              value: "90"
+              value: {{ .Values.inventoryMigration.dbWaitMaxAttempts | quote }}
             - name: DB_WAIT_SLEEP_SECONDS
-              value: "2"
+              value: {{ .Values.inventoryMigration.dbWaitSleepSeconds | quote }}
           resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 250m
-              memory: 256Mi
+            {{- toYaml .Values.inventoryMigration.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
             runAsUser: 10001
             readOnlyRootFilesystem: true
             capabilities:
-              drop: ["ALL"]
+              drop:
+                - ALL
           volumeMounts:
             - name: tmp
               mountPath: /tmp

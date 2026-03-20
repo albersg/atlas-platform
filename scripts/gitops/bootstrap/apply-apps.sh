@@ -15,6 +15,14 @@ if [[ -z "$ARGOCD_ENVIRONMENT" ]]; then
   fi
 fi
 
+platform_infra_apps() {
+  printf '%s\n' \
+    atlas-platform-istio-base \
+    atlas-platform-istiod \
+    atlas-platform-istio-ingress \
+    atlas-platform-prometheus
+}
+
 patch_application() {
   local source_file="$1"
   local app_name="$2"
@@ -63,9 +71,11 @@ PY
 kubectl apply -f "$ROOT_DIR/platform/argocd/apps/project-atlas-platform.yaml"
 kubectl apply -f "$ROOT_DIR/platform/argocd/apps/project-atlas-platform-infra.yaml"
 
-for app_name in atlas-platform-istio-base atlas-platform-istiod atlas-platform-istio-ingress atlas-platform-staging; do
+for app_name in $(platform_infra_apps); do
   patch_application "$ROOT_DIR/platform/argocd/apps/${app_name}.yaml" "$app_name"
 done
+
+patch_application "$ROOT_DIR/platform/argocd/apps/atlas-platform-staging.yaml" "atlas-platform-staging"
 
 kubectl -n argocd delete application atlas-platform-dev --ignore-not-found >/dev/null 2>&1 || true
 

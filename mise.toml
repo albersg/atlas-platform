@@ -260,11 +260,11 @@ description = "Render the encrypted staging overlay locally via KSOPS"
 run = "./scripts/gitops/render-overlay.sh platform/k8s/overlays/staging"
 
 [tasks.gitops-render-platform-infra-staging-local]
-description = "Render the staged Istio platform inputs for staging-local"
+description = "Render the staged platform add-on inputs for staging-local"
 run = "./scripts/gitops/render-platform-infra.sh staging-local"
 
 [tasks.gitops-render-platform-infra-staging]
-description = "Render the staged Istio platform inputs for staging"
+description = "Render the staged platform add-on inputs for staging"
 run = "./scripts/gitops/render-platform-infra.sh staging"
 
 [tasks.k8s-validate-overlays]

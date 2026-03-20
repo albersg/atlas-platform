@@ -1,7 +1,21 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: default-deny
+  labels:
+    {{- include "atlas-workloads.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-dns-egress
+  labels:
+    {{- include "atlas-workloads.labels" . | nindent 4 }}
 spec:
   podSelector: {}
   policyTypes:

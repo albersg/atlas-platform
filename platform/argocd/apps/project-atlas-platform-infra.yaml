@@ -10,6 +10,8 @@ spec:
   destinations:
     - namespace: istio-system
       server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
@@ -19,6 +21,8 @@ spec:
       kind: MutatingWebhookConfiguration
     - group: admissionregistration.k8s.io
       kind: ValidatingWebhookConfiguration
+    - group: apiregistration.k8s.io
+      kind: APIService
     - group: rbac.authorization.k8s.io
       kind: ClusterRole
     - group: rbac.authorization.k8s.io
@@ -34,10 +38,30 @@ spec:
       kind: ServiceAccount
     - group: apps
       kind: Deployment
+    - group: apps
+      kind: DaemonSet
+    - group: apps
+      kind: StatefulSet
     - group: autoscaling
       kind: HorizontalPodAutoscaler
+    - group: batch
+      kind: Job
     - group: policy
       kind: PodDisruptionBudget
+    - group: monitoring.coreos.com
+      kind: Alertmanager
+    - group: monitoring.coreos.com
+      kind: PodMonitor
+    - group: monitoring.coreos.com
+      kind: Probe
+    - group: monitoring.coreos.com
+      kind: Prometheus
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: monitoring.coreos.com
+      kind: ThanosRuler
     - group: rbac.authorization.k8s.io
       kind: Role
     - group: rbac.authorization.k8s.io

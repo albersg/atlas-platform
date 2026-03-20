@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 TOOLS_DIR="$ROOT_DIR/.gitops-local/bin"
+HELM_HOME_DIR="$ROOT_DIR/.gitops-local/helm"
 PLUGIN_DIR="$ROOT_DIR/.gitops-local/xdg/kustomize/plugin/viaduct.ai/v1/ksops"
 AGE_VERSION="v1.2.1"
 AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50" # pragma: allowlist secret
@@ -23,7 +24,12 @@ HELM_SHA256="fc307327959aa38ed8f9f7e66d45492bb022a66c3e5da6063958254b9767d179" #
 ISTIOCTL_VERSION="1.25.3"
 ISTIOCTL_SHA256="fb0bb4d1b884f8575e576ea5614d51c717c62cabd052e7d08e89f273114eb0bc" # pragma: allowlist secret
 
-mkdir -p "$TOOLS_DIR" "$PLUGIN_DIR"
+mkdir -p \
+  "$TOOLS_DIR" \
+  "$PLUGIN_DIR" \
+  "$HELM_HOME_DIR/cache" \
+  "$HELM_HOME_DIR/config" \
+  "$HELM_HOME_DIR/data"
 
 verify_sha256() {
   local expected_sha256="$1"

@@ -15,7 +15,7 @@ These commands are wrappers around a smaller set of tools the repo depends on:
 | `npm` and Vite | install, serve, and build the frontend |
 | Docker and Docker Compose | run the local stack and build images |
 | `kubectl`, k3s, and Kustomize | support local Kubernetes rendering and deployment |
-| Argo CD, SOPS, age, KSOPS, Helm, and Istio | power the GitOps, encrypted-secret, and platform-infra render flows |
+| Argo CD, SOPS, age, KSOPS, Helm, Istio, and Prometheus | power the GitOps, encrypted-secret, workload-base, and platform-infra render flows |
 | Kyverno | validates rendered overlays against repository policy rules |
 | Trivy, Cosign, and Syft | protect the image release and promotion path |
 | `pre-commit`, `ruff`, `pyright`, `pytest` | provide local quality checks |
@@ -299,7 +299,7 @@ Each command section answers the same questions:
 - Prerequisites: cluster access and relevant tooling.
 - Under the hood: runs `./scripts/k3s/cluster/doctor.sh`.
 - Useful detail: set `ATLAS_DOCTOR_SCOPE=dev` for a lighter check.
-- Useful detail: the staging scope now checks the three Istio infra Argo applications and the live `istio-system` deployments separately from the Atlas workload app.
+- Useful detail: the staging scope now checks the full infra Argo CD app set (`atlas-platform-istio-base`, `atlas-platform-istiod`, `atlas-platform-istio-ingress`, and `atlas-platform-prometheus`), plus the live `istio-system` and `monitoring` runtimes separately from the Atlas workload app.
 - Success looks like: no missing critical GitOps or k3s prerequisites.
 - Run next: `mise run k8s-validate-overlays` or deployment.
 
@@ -445,8 +445,8 @@ Each command section answers the same questions:
 - Purpose: validate rendered non-production overlays and policies.
 - When to run: before CI, before promotion, or after manifest changes.
 - Prerequisites: GitOps tooling and SOPS context if encrypted overlays are involved.
-- Under the hood: runs `./scripts/gitops/validate-overlays.sh`, which renders overlays with Kustomize and KSOPS, renders the Istio platform-infra slice with Helm, applies Kyverno policy bundles to combined staging surfaces, verifies trusted images, schema-checks manifests, and runs `istioctl analyze`.
-- Success looks like: `dev`, `staging`, `staging-local`, and both platform-infra render targets build cleanly.
+- Under the hood: runs `./scripts/gitops/validate-overlays.sh`, which renders the Helm-backed Atlas workload base through Kustomize and KSOPS, renders the full platform-infra add-on inventory with Helm for `staging` and `staging-local`, applies Kyverno policy bundles to combined staging surfaces, verifies trusted images, schema-checks manifests, and runs `istioctl analyze`.
+- Success looks like: `dev`, `staging`, `staging-local`, and both platform-infra render targets build cleanly for Istio plus Prometheus.
 - Run next: deployment or `mise run ci`.
 
 ### `mise run policy-check`
@@ -502,7 +502,7 @@ Each command section answers the same questions:
 - When to run: after core bootstrap and credentials are ready.
 - Prerequisites: Argo CD ready, repo credential ready, age key ready.
 - Under the hood: runs `./scripts/gitops/bootstrap/apply-apps.sh`.
-- Success looks like: the three Istio infra applications plus `atlas-platform-staging` exist with the expected env-specific value files.
+- Success looks like: the infra application set (`atlas-platform-istio-base`, `atlas-platform-istiod`, `atlas-platform-istio-ingress`, and `atlas-platform-prometheus`) plus `atlas-platform-staging` exist with the expected environment-specific value files.
 - Run next: wait or deploy staging.
 
 ### `mise run gitops-apply-staging`
@@ -520,6 +520,7 @@ Each command section answers the same questions:
 - When to run: after applying or deploying staging.
 - Prerequisites: staging application exists.
 - Under the hood: runs `./scripts/gitops/wait-app.sh atlas-platform-staging`.
+- Useful detail: this command waits only for the Atlas workload application; `mise run gitops-deploy-staging` is the command that waits for the full infra add-on set first.
 - Success looks like: synchronization completes successfully.
 - Run next: `mise run k8s-status-staging` or smoke checks.
 
@@ -530,7 +531,8 @@ Each command section answers the same questions:
 - Prerequisites: GitOps bootstrap complete.
 - Under the hood: runs `./scripts/gitops/deploy/staging.sh`.
 - Important detail: by default on local k3s it uses `staging-local`; set `STAGING_LOCAL_IMAGES=0` to target canonical `staging` behavior.
-- Important detail: it waits for `atlas-platform-istio-base`, `atlas-platform-istiod`, and `atlas-platform-istio-ingress` before the Atlas workload app, then prints staging status and runs mesh-aware smoke checks.
+- Important detail: it waits for `atlas-platform-istio-base`, `atlas-platform-istiod`, `atlas-platform-istio-ingress`, and `atlas-platform-prometheus` before the Atlas workload app, then prints staging status and runs mesh-aware smoke checks.
+- Important detail: local render and policy validation for the Prometheus slice are already part of the repo contract; live Prometheus proof still depends on the target cluster actually converging the `monitoring` namespace resources.
 - Success looks like: Argo CD infra sync, workload sync, and smoke checks all succeed.
 - Run next: `mise run k8s-status-staging` and `mise run k8s-access-staging`.
 
@@ -554,20 +556,20 @@ Each command section answers the same questions:
 
 ### `mise run gitops-render-platform-infra-staging-local`
 
-- Purpose: render the staged Istio infra inputs for `staging-local`.
-- When to run: before local mesh-infra rehearsal or while editing wrapper chart values.
+- Purpose: render the staged platform-infra add-on inputs for `staging-local`.
+- When to run: before local infra rehearsal or while editing Helm wrapper chart values.
 - Prerequisites: `mise run gitops-install-tools` completed.
-- Under the hood: runs `./scripts/gitops/render-platform-infra.sh staging-local` and templates the base, control plane, and ingress wrapper charts in a deterministic order.
-- Success looks like: Helm emits clean YAML for the three Istio applications using `values-staging-local.yaml`.
+- Under the hood: runs `./scripts/gitops/render-platform-infra.sh staging-local` and templates every registered platform-infra wrapper chart in a deterministic order.
+- Success looks like: Helm emits clean YAML for the staged Istio and Prometheus applications using `values-staging-local.yaml`.
 - Run next: `mise run k8s-validate-overlays`.
 
 ### `mise run gitops-render-platform-infra-staging`
 
-- Purpose: render the staged Istio infra inputs for canonical `staging`.
+- Purpose: render the staged platform-infra add-on inputs for canonical `staging`.
 - When to run: before promoting the infra model beyond local rehearsal.
 - Prerequisites: `mise run gitops-install-tools` completed.
 - Under the hood: runs `./scripts/gitops/render-platform-infra.sh staging` against the pinned wrapper charts and `values-staging.yaml`.
-- Success looks like: Helm emits clean YAML for the three Istio applications using the canonical staging value set.
+- Success looks like: Helm emits clean YAML for the staged Istio and Prometheus applications using the canonical staging value set.
 - Run next: `mise run k8s-validate-overlays`.
 
 ## Related references

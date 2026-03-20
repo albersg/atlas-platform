@@ -1,3 +1,4 @@
-pilot:
-  autoscaleEnabled: false
-  replicaCount: 1
+istiod:
+  pilot:
+    autoscaleEnabled: false
+    replicaCount: 1

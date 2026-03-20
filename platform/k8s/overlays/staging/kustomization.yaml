@@ -16,6 +16,7 @@ generators:
 components:
   - ../../components/images/staging
   - ../../components/mesh/istio
+  - ../../components/observability/prometheus
 
 patches:
   - target:

@@ -36,12 +36,16 @@ class RepoPolicyTests(unittest.TestCase):
             "platform/argocd/apps/atlas-platform-istio-base.yaml",
             "platform/argocd/apps/atlas-platform-istiod.yaml",
             "platform/argocd/apps/atlas-platform-istio-ingress.yaml",
+            "platform/argocd/apps/atlas-platform-prometheus.yaml",
             "platform/argocd/apps/atlas-platform-staging.yaml",
+            "platform/helm/atlas/workloads/Chart.yaml",
             "platform/helm/istio/base/Chart.yaml",
             "platform/helm/istio/istiod/Chart.yaml",
             "platform/helm/istio/gateway/Chart.yaml",
+            "platform/helm/prometheus/kube-prometheus-stack/Chart.yaml",
             "platform/policy/kyverno/common/block-dev-istio-resources.yaml",
             "platform/policy/kyverno/common/require-istio-infra-core-resources.yaml",
+            "platform/policy/kyverno/common/require-staging-monitoring-onboarding.yaml",
             "platform/policy/kyverno/common/require-staging-mesh-onboarding.yaml",
             "platform/policy/kyverno/staging/require-canonical-staging-mesh-routing.yaml",
             "platform/k8s/components/ingress/traefik/kustomization.yaml",
@@ -52,6 +56,8 @@ class RepoPolicyTests(unittest.TestCase):
             "platform/k8s/components/mesh/istio/destinationrule.yaml",
             "platform/k8s/components/mesh/istio/peerauthentication.yaml",
             "platform/k8s/components/mesh/istio/authorizationpolicy.yaml",
+            "platform/k8s/components/observability/prometheus/kustomization.yaml",
+            "platform/k8s/components/observability/prometheus/inventory-service-monitor.yaml",
             "platform/k8s/components/images/staging-local/kustomization.yaml",
             "platform/k8s/overlays/staging/kustomization.yaml",
             "scripts/gitops/bootstrap/apply-staging-app.sh",
@@ -287,7 +293,140 @@ class RepoPolicyTests(unittest.TestCase):
             'apply_policy_bundle "$STAGING_POLICY_BUNDLE" staging-policy-target staging-only',
             contents,
         )
+        self.assertIn('require_text "$TMP_DIR/staging.yaml" "kind: ServiceMonitor"', contents)
+        self.assertIn('require_text "$TMP_DIR/staging.yaml" "path: /metrics"', contents)
+        self.assertIn('require_text "$TMP_DIR/staging-local.yaml" "kind: ServiceMonitor"', contents)
+        self.assertIn('require_text "$TMP_DIR/staging-local.yaml" "path: /metrics"', contents)
         self.assertIn('"$ISTIOCTL_BIN" analyze --use-kube=false', contents)
+
+    def test_helm_enabled_render_paths_are_consistent_locally_and_in_argocd(self) -> None:
+        render_overlay = (ROOT / "scripts" / "gitops" / "render-overlay.sh").read_text(
+            encoding="utf-8"
+        )
+        cmp_plugin = (
+            ROOT / "platform" / "argocd" / "core" / "cmp" / "ksops-plugin-configmap.yaml"
+        ).read_text(encoding="utf-8")
+        repo_server_patch = (
+            ROOT / "platform" / "argocd" / "core" / "patches" / "repo-server-ksops-sidecar.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("--enable-helm", render_overlay)
+        self.assertIn("LoadRestrictionsNone", render_overlay)
+        self.assertIn("HELM_CACHE_HOME", render_overlay)
+        self.assertIn("--enable-helm", cmp_plugin)
+        self.assertIn("LoadRestrictionsNone", cmp_plugin)
+        self.assertIn("HELM_URL", repo_server_patch)
+        self.assertIn("/custom-tools/bin/helm", repo_server_patch)
+
+    def test_platform_architecture_foundation_artifacts_exist(self) -> None:
+        atlas_chart = (ROOT / "platform" / "helm" / "atlas" / "workloads" / "Chart.yaml").read_text(
+            encoding="utf-8"
+        )
+        atlas_values = (
+            ROOT / "platform" / "helm" / "atlas" / "workloads" / "values-common.yaml"
+        ).read_text(encoding="utf-8")
+        prometheus_chart = (
+            ROOT / "platform" / "helm" / "prometheus" / "kube-prometheus-stack" / "Chart.yaml"
+        ).read_text(encoding="utf-8")
+        prometheus_values = (
+            ROOT
+            / "platform"
+            / "helm"
+            / "prometheus"
+            / "kube-prometheus-stack"
+            / "values-common.yaml"
+        ).read_text(encoding="utf-8")
+        prometheus_app = (
+            ROOT / "platform" / "argocd" / "apps" / "atlas-platform-prometheus.yaml"
+        ).read_text(encoding="utf-8")
+        operations_overview = (ROOT / "docs" / "operations" / "overview.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("name: atlas-workloads", atlas_chart)
+        self.assertIn("inventoryService:", atlas_values)
+        self.assertIn("inventoryMigration:", atlas_values)
+        self.assertIn("name: atlas-platform-prometheus", prometheus_chart)
+        self.assertIn("kube-prometheus-stack", prometheus_chart)
+        self.assertIn("grafana:", prometheus_values)
+        self.assertIn("name: atlas-platform-prometheus", prometheus_app)
+        self.assertIn("namespace: monitoring", prometheus_app)
+        self.assertIn("Helm owns reusable bases", operations_overview)
+        self.assertIn("Kustomize owns environment overlays", operations_overview)
+
+    def test_gitops_docs_keep_platform_boundary_and_prometheus_slice_explicit(self) -> None:
+        commands_reference = (ROOT / "docs" / "reference" / "commands.md").read_text(
+            encoding="utf-8"
+        )
+        bootstrap_guide = (ROOT / "docs" / "operations" / "gitops-bootstrap.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("atlas-platform-prometheus", commands_reference)
+        self.assertIn("Istio plus Prometheus", commands_reference)
+        self.assertIn("Helm is the reusable base layer", bootstrap_guide)
+        self.assertIn("Kustomize is the environment overlay layer", bootstrap_guide)
+        self.assertIn("inventory-service", bootstrap_guide)
+        anti_duplication_note = (
+            "Do not encode the same environment-specific behavior in both Helm values "
+            "and Kustomize overlays"
+        )
+        self.assertIn(
+            anti_duplication_note,
+            bootstrap_guide,
+        )
+
+    def test_atlas_base_is_a_helm_backed_compatibility_adapter(self) -> None:
+        base_kustomization = (ROOT / "platform" / "k8s" / "base" / "kustomization.yaml").read_text(
+            encoding="utf-8"
+        )
+        inventory_template = (
+            ROOT
+            / "platform"
+            / "helm"
+            / "atlas"
+            / "workloads"
+            / "templates"
+            / "inventory-service.yaml"
+        ).read_text(encoding="utf-8")
+        web_template = (
+            ROOT / "platform" / "helm" / "atlas" / "workloads" / "templates" / "web.yaml"
+        ).read_text(encoding="utf-8")
+        migration_template = (
+            ROOT
+            / "platform"
+            / "helm"
+            / "atlas"
+            / "workloads"
+            / "templates"
+            / "inventory-migration-job.yaml"
+        ).read_text(encoding="utf-8")
+        networkpolicy_template = (
+            ROOT
+            / "platform"
+            / "helm"
+            / "atlas"
+            / "workloads"
+            / "templates"
+            / "networkpolicies.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("helmGlobals:", base_kustomization)
+        self.assertIn("chartHome: ../../helm/atlas", base_kustomization)
+        self.assertIn("helmCharts:", base_kustomization)
+        self.assertIn("name: workloads", base_kustomization)
+        self.assertIn("releaseName: atlas-platform", base_kustomization)
+        self.assertNotIn("resources:", base_kustomization)
+        self.assertIn("kind: Deployment", inventory_template)
+        self.assertIn("name: {{ .Values.inventoryService.name }}", inventory_template)
+        self.assertIn("kind: Service", inventory_template)
+        self.assertIn("kind: HorizontalPodAutoscaler", inventory_template)
+        self.assertIn("kind: PodDisruptionBudget", inventory_template)
+        self.assertIn("kind: NetworkPolicy", inventory_template)
+        self.assertIn("name: {{ .Values.web.name }}", web_template)
+        self.assertIn("name: {{ .Values.inventoryMigration.name }}", migration_template)
+        self.assertIn("name: default-deny", networkpolicy_template)
+        self.assertIn("name: allow-dns-egress", networkpolicy_template)
 
     def test_mesh_policy_bundles_cover_dev_guardrails_and_staging_contract(self) -> None:
         common_kustomization = (
@@ -346,6 +485,15 @@ class RepoPolicyTests(unittest.TestCase):
         staging_local_overlay = (
             ROOT / "platform" / "k8s" / "overlays" / "staging-local" / "kustomization.yaml"
         ).read_text(encoding="utf-8")
+        observability_component = (
+            ROOT
+            / "platform"
+            / "k8s"
+            / "components"
+            / "observability"
+            / "prometheus"
+            / "kustomization.yaml"
+        ).read_text(encoding="utf-8")
         base_kustomization = (ROOT / "platform" / "k8s" / "base" / "kustomization.yaml").read_text(
             encoding="utf-8"
         )
@@ -359,10 +507,57 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertNotIn("networking/ingress.yaml", base_kustomization)
         self.assertIn("../../components/ingress/traefik", dev_overlay)
         self.assertNotIn("../../components/mesh/istio", dev_overlay)
+        self.assertNotIn("../../components/observability/prometheus", dev_overlay)
         self.assertIn("../../components/mesh/istio", staging_overlay)
+        self.assertIn("../../components/observability/prometheus", staging_overlay)
         self.assertIn("../../components/mesh/istio", staging_local_overlay)
+        self.assertIn("../../components/observability/prometheus", staging_local_overlay)
+        self.assertIn("inventory-service-monitor.yaml", observability_component)
         self.assertIn("resources:\n  - ingress.yaml", traefik_component)
         self.assertIn("resources:\n  - gateway.yaml", mesh_component)
+
+    def test_inventory_service_monitor_stays_workload_owned(self) -> None:
+        monitor = (
+            ROOT
+            / "platform"
+            / "k8s"
+            / "components"
+            / "observability"
+            / "prometheus"
+            / "inventory-service-monitor.yaml"
+        ).read_text(encoding="utf-8")
+        policy = (
+            ROOT
+            / "platform"
+            / "policy"
+            / "kyverno"
+            / "common"
+            / "require-staging-monitoring-onboarding.yaml"
+        ).read_text(encoding="utf-8")
+        inventory_main = (
+            ROOT / "services" / "inventory-service" / "src" / "inventory_service" / "main.py"
+        ).read_text(encoding="utf-8")
+        inventory_template = (
+            ROOT
+            / "platform"
+            / "helm"
+            / "atlas"
+            / "workloads"
+            / "templates"
+            / "inventory-service.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("kind: ServiceMonitor", monitor)
+        self.assertIn("name: inventory-service", monitor)
+        self.assertIn("release: atlas-platform-prometheus", monitor)
+        self.assertIn("path: /metrics", monitor)
+        self.assertIn("matchNames:", monitor)
+        self.assertIn("atlas-platform-staging", monitor)
+        self.assertIn("- ServiceMonitor", policy)
+        self.assertIn("release: atlas-platform-prometheus", policy)
+        self.assertIn('app.get("/metrics", include_in_schema=False)', inventory_main)
+        self.assertIn("prometheus_client", inventory_main)
+        self.assertIn("app: {{ .Values.inventoryService.name }}", inventory_template)
 
     def test_mesh_component_targets_only_first_wave_workloads(self) -> None:
         mesh_component = (
@@ -407,6 +602,9 @@ class RepoPolicyTests(unittest.TestCase):
             / "patches"
             / "inventory-service-sidecar-injection.yaml"
         ).read_text(encoding="utf-8")
+        migrate_script = (
+            ROOT / "services" / "inventory-service" / "scripts" / "migrate.sh"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("web-sidecar-injection.yaml", mesh_component)
         self.assertIn("inventory-service-sidecar-injection.yaml", mesh_component)
@@ -420,6 +618,9 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("sidecar.istio.io/proxyCPULimit: 300m", inventory_patch)
         self.assertIn('sidecar.istio.io/inject: "true"', migration_patch)
         self.assertIn("istio.io/rev: default", migration_patch)
+        self.assertIn("ISTIO_QUIT_SIDECAR_ON_EXIT", migration_patch)
+        self.assertIn("ISTIO_QUIT_SIDECAR_ON_EXIT", migrate_script)
+        self.assertIn("quitquitquit", migrate_script)
 
     def test_staging_mesh_resources_use_mesh_native_http_entrypoint(self) -> None:
         gateway = (
@@ -442,7 +643,10 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("number: 80", gateway)
         self.assertIn("staging.atlas.example.com", virtual_service)
         self.assertIn("api.staging.atlas.example.com", virtual_service)
-        self.assertIn("type: NodePort", staging_local_gateway_values)
+        self.assertIn(
+            "gateway:\n  service:\n    annotations: {}\n    type: NodePort",
+            staging_local_gateway_values,
+        )
         self.assertIn("nodePort: 32080", staging_local_gateway_values)
         self.assertIn("nodePort: 32443", staging_local_gateway_values)
         self.assertIn(
@@ -459,6 +663,23 @@ class RepoPolicyTests(unittest.TestCase):
             'STAGING_LOCAL_HTTP_PORT="${ATLAS_STAGING_LOCAL_HTTP_PORT:-32080}"', access_script
         )
         self.assertIn("NodePort del gateway Istio", access_script)
+
+    def test_istio_argocd_apps_ignore_webhook_mutations(self) -> None:
+        base_app = (
+            ROOT / "platform" / "argocd" / "apps" / "atlas-platform-istio-base.yaml"
+        ).read_text(encoding="utf-8")
+        istiod_app = (
+            ROOT / "platform" / "argocd" / "apps" / "atlas-platform-istiod.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("RespectIgnoreDifferences=true", base_app)
+        self.assertIn("name: istiod-default-validator", base_app)
+        self.assertIn(".webhooks[]?.clientConfig.caBundle", base_app)
+        self.assertIn(".webhooks[]?.failurePolicy", base_app)
+        self.assertIn("RespectIgnoreDifferences=true", istiod_app)
+        self.assertIn("name: istio-sidecar-injector", istiod_app)
+        self.assertIn("name: istio-validator-istio-system", istiod_app)
+        self.assertIn(".webhooks[]?.clientConfig.caBundle", istiod_app)
 
     def test_staging_local_keeps_local_only_mesh_admission_relaxation(self) -> None:
         staging_local_namespace = (
@@ -495,8 +716,13 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("kind: DestinationRule", app_project)
         self.assertIn("kind: PeerAuthentication", app_project)
         self.assertIn("kind: AuthorizationPolicy", app_project)
+        self.assertIn("kind: ServiceMonitor", app_project)
+        self.assertIn("kind: PrometheusRule", app_project)
         self.assertIn("name: atlas-platform-infra", infra_project)
         self.assertIn("namespace: istio-system", infra_project)
+        self.assertIn("namespace: monitoring", infra_project)
+        self.assertIn("kind: Prometheus", infra_project)
+        self.assertIn("kind: ServiceMonitor", infra_project)
 
     def test_istio_wrapper_charts_pin_versions_and_render_tasks(self) -> None:
         base_chart = (ROOT / "platform" / "helm" / "istio" / "base" / "Chart.yaml").read_text(
@@ -520,6 +746,17 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("version: 1.25.3", istiod_chart)
         self.assertIn("version: 1.25.3", gateway_chart)
         self.assertIn('ENVIRONMENT="$1"', render_script)
+        self.assertIn("platform_infra_inventory", render_script)
+        self.assertIn("atlas-platform-prometheus", render_script)
+        self.assertIn("platform/helm/prometheus/kube-prometheus-stack", render_script)
+        self.assertIn(
+            "repo add atlas-istio https://istio-release.storage.googleapis.com/charts",
+            render_script,
+        )
+        self.assertIn(
+            "repo add atlas-prometheus https://prometheus-community.github.io/helm-charts",
+            render_script,
+        )
         self.assertIn('"$HELM_BIN" dependency build', render_script)
         self.assertIn("values-${ENVIRONMENT}.yaml", render_script)
         self.assertIn('HELM_VERSION="v3.16.4"', install_tools)
@@ -715,6 +952,9 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("Salud operativa staging", contents)
         self.assertIn("atlas-platform-istio-base", contents)
         self.assertIn("atlas-platform-istio-ingress", contents)
+        self.assertIn("atlas-platform-prometheus", contents)
+        self.assertIn("namespace monitoring presente", contents)
+        self.assertIn("kube-prometheus-operator", contents)
         self.assertIn("namespace istio-system presente", contents)
         self.assertIn("atlas-platform-staging", contents)
 
@@ -736,13 +976,9 @@ class RepoPolicyTests(unittest.TestCase):
             'ARGOCD_WAIT_TIMEOUT_SECONDS="${ARGOCD_WAIT_TIMEOUT_SECONDS:-600}"', deploy_script
         )
         self.assertIn('"$ROOT_DIR/scripts/gitops/bootstrap/apply-apps.sh"', deploy_script)
-        self.assertIn(
-            '"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-base', deploy_script
-        )
-        self.assertIn('"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istiod', deploy_script)
-        self.assertIn(
-            '"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-ingress', deploy_script
-        )
+        self.assertIn("platform_infra_apps", deploy_script)
+        self.assertIn('"$ROOT_DIR/scripts/gitops/wait-app.sh" "$app_name"', deploy_script)
+        self.assertIn("atlas-platform-prometheus", deploy_script)
         self.assertIn("ensure_gateway_ready_for_mesh_smoke", deploy_script)
         self.assertIn(
             '"$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging', deploy_script
@@ -752,14 +988,10 @@ class RepoPolicyTests(unittest.TestCase):
         )
         self.assertIn('ARGOCD_ENVIRONMENT="${ARGOCD_ENVIRONMENT:-}"', apply_apps)
         self.assertIn('f"        - values-{environment}.yaml"', apply_apps)
-        self.assertIn(
-            (
-                "atlas-platform-istio-base atlas-platform-istiod "
-                "atlas-platform-istio-ingress atlas-platform-staging"
-            ),
-            apply_apps,
-        )
+        self.assertIn("platform_infra_apps", apply_apps)
+        self.assertIn("atlas-platform-prometheus", apply_apps)
         self.assertIn("== Mesh Runtime ==", status_script)
+        self.assertIn("== Monitoring Runtime ==", status_script)
         self.assertIn("== Argo CD Applications ==", status_script)
         self.assertIn("wait_for_sidecar_ready", smoke_script)
         self.assertIn("require_sidecar_injection", smoke_script)
