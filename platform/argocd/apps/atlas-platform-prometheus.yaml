@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: atlas-platform-prometheus
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: atlas-platform-infra
+  source:
+    repoURL: git@github.com:albersg/atlas-platform.git
+    targetRevision: main
+    path: platform/helm/prometheus/kube-prometheus-stack
+    helm:
+      valueFiles:
+        - values-common.yaml
+        - values-staging-local.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true

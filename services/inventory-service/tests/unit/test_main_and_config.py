@@ -57,6 +57,27 @@ def test_create_app_healthcheck_and_no_sentry_when_dsn_missing(monkeypatch, tmp_
     assert init_calls == []
 
 
+def test_create_app_exposes_prometheus_metrics(monkeypatch, tmp_path: Path) -> None:
+    from inventory_service import main as main_module
+
+    monkeypatch.setattr(main_module.settings, "sentry_dsn", None)
+    monkeypatch.setattr(main_module.settings, "app_name", "inventory-service")
+    monkeypatch.setattr(
+        main_module.settings,
+        "database_url",
+        f"sqlite+pysqlite:///{tmp_path / 'inventory-metrics.db'}",
+    )
+
+    app = create_app()
+    client = TestClient(app)
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain; version=1.0.0")
+    assert "python_gc_objects_collected_total" in response.text
+
+
 def test_create_app_readiness_fails_when_database_unavailable(monkeypatch, tmp_path: Path) -> None:
     from inventory_service import main as main_module
 

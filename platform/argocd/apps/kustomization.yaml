@@ -9,4 +9,5 @@ resources:
   - atlas-platform-istio-base.yaml
   - atlas-platform-istiod.yaml
   - atlas-platform-istio-ingress.yaml
+  - atlas-platform-prometheus.yaml
   - atlas-platform-staging.yaml

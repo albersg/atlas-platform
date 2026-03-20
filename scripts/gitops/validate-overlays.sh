@@ -30,6 +30,24 @@ combine_surface() {
   cat "$TMP_DIR/${environment}.yaml" "$TMP_DIR/platform-infra-${environment}.yaml" >"$TMP_DIR/${environment}-combined.yaml"
 }
 
+require_text() {
+  local file_path="$1"
+  local expected_text="$2"
+  local description="$3"
+
+  python - "$file_path" "$expected_text" "$description" <<'PY'
+from pathlib import Path
+import sys
+
+file_path = Path(sys.argv[1])
+expected_text = sys.argv[2]
+description = sys.argv[3]
+contents = file_path.read_text(encoding="utf-8")
+if expected_text not in contents:
+    raise SystemExit(f"Falta {description} en {file_path.name}")
+PY
+}
+
 apply_policy_bundle() {
   local bundle_path="$1"
   local overlay_name="$2"
@@ -82,6 +100,11 @@ cp "$TMP_DIR/staging-local-combined.yaml" "$TMP_DIR/staging-local-policy-target.
 apply_policy_bundle "$COMMON_POLICY_BUNDLE" staging-policy-target common
 apply_policy_bundle "$COMMON_POLICY_BUNDLE" staging-local-policy-target common
 apply_policy_bundle "$STAGING_POLICY_BUNDLE" staging-policy-target staging-only
+
+require_text "$TMP_DIR/staging.yaml" "kind: ServiceMonitor" "ServiceMonitor renderizado para staging"
+require_text "$TMP_DIR/staging.yaml" "path: /metrics" "endpoint /metrics en staging"
+require_text "$TMP_DIR/staging-local.yaml" "kind: ServiceMonitor" "ServiceMonitor renderizado para staging-local"
+require_text "$TMP_DIR/staging-local.yaml" "path: /metrics" "endpoint /metrics en staging-local"
 
 if [[ "$PREFLIGHT_ONLY" = "1" ]]; then
   echo "Preflight de render y bundles de politica completado."

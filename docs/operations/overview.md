@@ -10,8 +10,8 @@ repository's non-production platform workflows.
 | Kubernetes or `k8s` | the target platform model for cluster-based environments |
 | k3s | the lightweight local Kubernetes distribution used for `dev` and `staging-local` |
 | `kubectl` | the direct CLI for inspecting cluster resources |
-| Kustomize | builds environment-specific overlays from reusable manifest pieces |
-| Helm | packages pinned upstream platform add-ons such as Istio |
+| Kustomize | builds environment-specific overlays, patches, and KSOPS-backed secret composition |
+| Helm | defines reusable workload and platform add-on bases, including upstream chart wrappers |
 | Argo CD | reconciles Git-defined state into the cluster |
 | GitOps | the operating model that says Git is the desired source of truth |
 | SOPS and age | keep secrets encrypted while still storing them in the repo |
@@ -46,7 +46,10 @@ repository's non-production platform workflows.
 - `dev` is a local k3s lab, not the canonical staging path.
 - `staging-local` exists to learn and validate the topology locally without weakening canonical `staging`.
 - `staging` should consume registry images by digest, not local dev images.
-- Kustomize remains the first-party workload model; Helm is only for upstream platform add-ons.
+- Helm owns reusable bases and shared chart configuration under `platform/helm/`.
+- Kustomize owns environment overlays, KSOPS/SOPS secrets, and environment adaptation under `platform/k8s/overlays/`.
+- Atlas workloads stay in the workload Argo CD boundary, while Istio and Prometheus live in the infra boundary.
+- The platform-infra bundle currently includes Istio plus a minimal Prometheus stack in the dedicated `monitoring` namespace.
 - Istio now owns the staged mesh path for `staging-local` and `staging`, while `dev` intentionally stays on Traefik.
 - Kubernetes knowledge matters most from `dev` onward; Compose is intentionally a simpler first step.
 - Production is intentionally outside the repo's current operational scope.

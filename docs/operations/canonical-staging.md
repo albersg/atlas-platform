@@ -24,7 +24,7 @@ mise run k8s-access-staging
 ## What makes canonical staging different
 
 - it uses `platform/k8s/overlays/staging`, not `staging-local`,
-- it has a parallel `platform/helm/istio/*/values-staging.yaml` render surface and the same mesh workload component shape as `staging-local`,
+- it has parallel `platform/helm/istio/*/values-staging.yaml` and `platform/helm/prometheus/*/values-staging.yaml` render surfaces plus the same mesh workload component shape as `staging-local`,
 - it does not reuse the `staging-local` NodePort exposure model or local PodSecurity relaxation,
 - it expects registry-backed images,
 - it relies on immutable digests for promotion,
@@ -34,7 +34,8 @@ mise run k8s-access-staging
 ## What to verify after deployment
 
 - Argo CD sync completed,
-- the three Istio infra applications are synced and healthy before the Atlas workload app,
+- the full infra add-on set, including Prometheus in `monitoring`, is synced and healthy before the Atlas workload app,
+- the staged workload overlay still owns the `inventory-service` `ServiceMonitor` and `/metrics` scrape intent,
 - workloads are healthy,
 - migration job completed,
 - smoke checks pass,
@@ -50,8 +51,8 @@ mise run k8s-access-staging
 ## Istio status in this slice
 
 Canonical `staging` now has pinned Helm value inputs, the same first-wave mesh
-workload component as `staging-local`, and a deterministic render path for Istio
-infrastructure:
+workload component as `staging-local`, and a deterministic render path for the
+Istio plus Prometheus infrastructure bundle:
 
 ```bash
 mise run gitops-render-platform-infra-staging >/dev/null

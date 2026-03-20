@@ -1,0 +1,112 @@
+config:
+  inventoryAppEnv: shared
+  runMigrationsOnStartup: "0"
+
+inventoryService:
+  name: inventory-service
+  serviceName: inventory-service
+  pdbName: inventory-service-pdb
+  replicas: 2
+  minReadySeconds: 5
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 5
+  image:
+    repository: ghcr.io/albersg/atlas-inventory-service
+    tag: main
+    pullPolicy: IfNotPresent
+  containerPort: 8000
+  servicePort: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  probes:
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 5
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 20
+      periodSeconds: 20
+      timeoutSeconds: 2
+      failureThreshold: 3
+    startup:
+      path: /readyz
+      periodSeconds: 5
+      failureThreshold: 30
+  hpa:
+    minReplicas: 2
+    maxReplicas: 6
+    averageCpuUtilization: 70
+  pdb:
+    minAvailable: 1
+
+web:
+  name: web
+  serviceName: web
+  pdbName: web-pdb
+  replicas: 2
+  minReadySeconds: 5
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 5
+  image:
+    repository: ghcr.io/albersg/atlas-web
+    tag: main
+    pullPolicy: IfNotPresent
+  containerPort: 8080
+  servicePort: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  probes:
+    readiness:
+      path: /
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 2
+    liveness:
+      path: /
+      initialDelaySeconds: 20
+      periodSeconds: 20
+      timeoutSeconds: 2
+    startup:
+      path: /
+      periodSeconds: 5
+      failureThreshold: 24
+  hpa:
+    minReplicas: 2
+    maxReplicas: 6
+    averageCpuUtilization: 70
+  pdb:
+    minAvailable: 1
+
+inventoryMigration:
+  name: inventory-migration
+  image:
+    repository: ghcr.io/albersg/atlas-inventory-service
+    tag: main
+    pullPolicy: IfNotPresent
+  command:
+    - /app/scripts/migrate.sh
+  dbWaitMaxAttempts: "90"
+  dbWaitSleepSeconds: "2"
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  activeDeadlineSeconds: 900
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi

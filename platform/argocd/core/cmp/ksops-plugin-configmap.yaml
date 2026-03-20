@@ -21,4 +21,4 @@ data:
         command:
           - sh
           - -c
-          - /custom-tools/bin/kustomize build --enable-alpha-plugins --enable-exec .
+          - /custom-tools/bin/kustomize build --enable-alpha-plugins --enable-exec --enable-helm --load-restrictor LoadRestrictionsNone .

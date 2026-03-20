@@ -6,6 +6,14 @@ ARGOCD_REPO_SECRET_NAME="${ARGOCD_REPO_SECRET_NAME:-argocd-repo-atlas-platform}"
 STAGING_LOCAL_IMAGES="${STAGING_LOCAL_IMAGES:-1}"
 ARGOCD_WAIT_TIMEOUT_SECONDS="${ARGOCD_WAIT_TIMEOUT_SECONDS:-600}"
 
+platform_infra_apps() {
+  printf '%s\n' \
+    atlas-platform-istio-base \
+    atlas-platform-istiod \
+    atlas-platform-istio-ingress \
+    atlas-platform-prometheus
+}
+
 if [[ "$STAGING_LOCAL_IMAGES" = "1" ]]; then
   : "${ARGOCD_APP_PATH:=platform/k8s/overlays/staging-local}"
   : "${ARGOCD_ENVIRONMENT:=staging-local}"
@@ -56,9 +64,10 @@ if ! kubectl -n argocd get secret "$ARGOCD_REPO_SECRET_NAME" >/dev/null 2>&1; th
 fi
 
 "$ROOT_DIR/scripts/gitops/bootstrap/apply-apps.sh"
-"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-base argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
-"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istiod argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
-"$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-istio-ingress argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
+while IFS= read -r app_name; do
+  "$ROOT_DIR/scripts/gitops/wait-app.sh" "$app_name" argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
+done < <(platform_infra_apps)
+
 ensure_gateway_ready_for_mesh_smoke
 "$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-staging argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
 "$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging

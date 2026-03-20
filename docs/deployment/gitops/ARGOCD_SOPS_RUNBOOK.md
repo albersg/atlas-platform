@@ -30,6 +30,7 @@ staging behavior.
 - `platform/argocd/core/` installs Argo CD and the KSOPS integration.
 - `platform/argocd/apps/` defines the application bundle for non-production.
 - `platform/helm/istio/` stores the pinned Helm wrapper charts for the Istio infra layer.
+- `platform/helm/prometheus/` stores the pinned Helm wrapper chart for the Prometheus infra layer.
 - `platform/policy/kyverno/` enforces the layered contract across workload and infra renders.
 - `platform/k8s/overlays/*/secrets/*.enc.yaml` stores encrypted secrets.
 - `.sops.yaml` defines how the repo encrypts and decrypts those files.
@@ -138,8 +139,8 @@ mise run gitops-apply-apps
 ```
 
 What it does conceptually: creates the non-production application bundle,
-including `atlas-platform-infra`, the three Istio infra applications, and
-`atlas-platform-staging`.
+including `atlas-platform-infra`, the Istio plus Prometheus infra applications,
+and `atlas-platform-staging`.
 
 Success looks like: the staging application exists in Argo CD and points at the
 expected repo and revision.
@@ -159,9 +160,9 @@ mise run k8s-validate-overlays
 What they do conceptually:
 
 - the render commands prove Kustomize plus KSOPS can build the target manifests,
-- the platform-infra render commands prove the Helm-wrapped Istio inputs still produce deterministic YAML,
+- the platform-infra render commands prove the Helm-wrapped Istio and Prometheus inputs still produce deterministic YAML,
 - `mise run k8s-validate-overlays` enforces the repo's policy rules across `dev`,
-  `staging`, `staging-local`, and the rendered Istio infra output,
+  `staging`, `staging-local`, and the rendered infra output,
 - the same validation now runs `istioctl analyze` on the combined mesh surfaces before sync,
 - immutable image and signature rules only apply to canonical `staging`.
 
@@ -181,8 +182,8 @@ What it does conceptually on local k3s:
 1. builds or reuses local `:main` image refs,
 2. imports them into k3s,
 3. points the workload application at `platform/k8s/overlays/staging-local`,
-4. keeps the Istio infra apps on `values-staging-local.yaml`,
-5. waits for the three infra apps and then the workload app,
+4. keeps the infra apps on `values-staging-local.yaml`,
+5. waits for the full infra app set, including Prometheus in `monitoring`, and then the workload app,
 6. runs mesh-aware smoke checks.
 
 Success looks like: `atlas-platform-staging` reaches synced and healthy state on
@@ -290,6 +291,7 @@ normal reconciliation without decryption failures.
 
 - confirm `ARGOCD_APP_REVISION` points to a reachable remote branch or commit,
 - run `mise run gitops-wait-staging` after fixing the underlying error,
+- run `mise run k8s-status-staging` to inspect both the `istio-system` and `monitoring` runtime surfaces,
 - inspect the Argo CD UI for the exact resource diff or render failure.
 
 ### Policy validation fails for canonical staging

@@ -1,0 +1,35 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-staging-monitoring-onboarding
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-inventory-service-monitor-shape
+      match:
+        any:
+          - resources:
+              kinds:
+                - ServiceMonitor
+              namespaces:
+                - atlas-platform-staging
+              names:
+                - inventory-service
+      validate:
+        message: Staging monitoring onboarding must keep the inventory-service ServiceMonitor wired to the Atlas Prometheus release.
+        pattern:
+          metadata:
+            labels:
+              app: inventory-service
+              release: atlas-platform-prometheus
+          spec:
+            selector:
+              matchLabels:
+                app: inventory-service
+            namespaceSelector:
+              matchNames:
+                - atlas-platform-staging
+            endpoints:
+              - port: http
+                path: /metrics

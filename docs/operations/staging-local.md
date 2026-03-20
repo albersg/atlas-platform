@@ -4,9 +4,10 @@
 the Argo CD and KSOPS flow, but uses local `:main` images on k3s so you can
 learn and validate without requiring published GHCR digests.
 
-In the current Istio slice, `staging-local` is also the default target for the
-new platform-infra applications under `platform/helm/istio/` and the first
-mesh-enabled workload overlay under `platform/k8s/components/mesh/istio/`.
+In the current staged slice, `staging-local` is also the default target for the
+platform-infra applications under `platform/helm/istio/` and
+`platform/helm/prometheus/`, plus the first mesh-enabled workload overlay under
+`platform/k8s/components/mesh/istio/`.
 
 ## Main command
 
@@ -18,19 +19,21 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 
 - builds local staging image refs by default,
 - imports them into the local k3s runtime,
-- keeps the Istio infra applications pointed at `values-staging-local.yaml`,
+- keeps the infra applications pointed at `values-staging-local.yaml`,
 - patches the Argo CD application to use `platform/k8s/overlays/staging-local`,
 - exposes the Istio ingress gateway through fixed local NodePorts instead of competing with k3s Traefik for host ports `80/443`,
 - routes hostname traffic through the Istio ingress gateway instead of the dev Traefik component,
+- deploys Prometheus into the dedicated `monitoring` namespace with a reduced local footprint,
 - injects sidecars only into `web`, `inventory-service`, and `inventory-migration`,
 - waits for synchronization,
-- waits for the three Istio infra applications before the workload application,
+- waits for the full infra app set before the workload application,
 - runs smoke checks.
 
 ## Why this environment exists
 
 - to practice the GitOps workflow locally,
 - to prove the new Helm-managed Istio render path before canonical staging promotion,
+- to prove the first Prometheus infra add-on can ride the same Helm-plus-Argo-CD contract without pulling in the full observability stack,
 - to validate Argo CD reconciliation and encrypted overlay rendering,
 - to verify the first-wave mesh behavior without pulling PostgreSQL into the mesh,
 - to avoid weakening the canonical `staging` contract.
@@ -49,6 +52,15 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 - `mise run k8s-smoke-staging`
 - `mise run gitops-render-platform-infra-staging-local`
 - `mise run k8s-doctor`
+
+## Prometheus notes
+
+- `platform/helm/prometheus/kube-prometheus-stack/values-staging-local.yaml` keeps Prometheus on conservative storage and memory settings for local k3s,
+- the first slice enables the Prometheus control plane only; Grafana and Alertmanager stay disabled,
+- `platform/k8s/components/observability/prometheus/inventory-service-monitor.yaml` keeps the first workload scrape contract in the workload layer, not the infra chart,
+- `inventory-service` now exposes `/metrics`, and the staged overlays compose a workload-owned `ServiceMonitor` labeled for the `atlas-platform-prometheus` release,
+- `mise run k8s-status-staging` now shows the `monitoring` namespace alongside the mesh runtime,
+- `mise run k8s-doctor` checks that the Prometheus Argo CD app, operator deployment, Prometheus StatefulSet, and service exist before you trust the environment.
 
 ## Current mesh notes
 

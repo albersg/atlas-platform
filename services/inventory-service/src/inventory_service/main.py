@@ -1,5 +1,5 @@
 import sentry_sdk
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Response, status
 from inventory_service.inventory.adapters.api.http.router import build_inventory_router
 from inventory_service.inventory.adapters.persistence.sqlalchemy.uow import (
     SqlAlchemyInventoryUnitOfWork,
@@ -7,6 +7,7 @@ from inventory_service.inventory.adapters.persistence.sqlalchemy.uow import (
 from inventory_service.inventory.ports.uow import InventoryUnitOfWork
 from inventory_service.shared.config import settings
 from inventory_service.shared.db import create_session_factory
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sqlalchemy import text
 
@@ -43,6 +44,10 @@ def create_app() -> FastAPI:
             ) from exc
 
         return {"status": "ok", "service": settings.app_name}
+
+    @app.get("/metrics", include_in_schema=False)
+    def metrics() -> Response:
+        return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     app.include_router(build_inventory_router(uow_factory=uow_factory))
     return app

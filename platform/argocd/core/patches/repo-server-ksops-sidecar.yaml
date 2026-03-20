@@ -19,12 +19,17 @@ spec:
               value: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz
             - name: KUSTOMIZE_SHA256
               value: 3669470b454d865c8184d6bce78df05e977c9aea31c30df3c669317d43bcc7a7 # pragma: allowlist secret
+            - name: HELM_URL
+              value: https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz
+            - name: HELM_SHA256
+              value: fc307327959aa38ed8f9f7e66d45492bb022a66c3e5da6063958254b9767d179 # pragma: allowlist secret
           command:
             - sh
             - -ec
             - |
               apk add --no-cache curl tar
               mkdir -p /custom-tools/bin /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops
+              mkdir -p /custom-tools/helm/cache /custom-tools/helm/config /custom-tools/helm/data
 
               download_and_extract() {
                 local url="$1"
@@ -41,7 +46,10 @@ spec:
 
               download_and_extract "$KSOPS_URL" "$KSOPS_SHA256" /custom-tools/bin
               download_and_extract "$KUSTOMIZE_URL" "$KUSTOMIZE_SHA256" /custom-tools/bin
+              download_and_extract "$HELM_URL" "$HELM_SHA256" /tmp
+              cp /tmp/linux-amd64/helm /custom-tools/bin/helm
               chmod +x /custom-tools/bin/ksops /custom-tools/bin/kustomize
+              chmod +x /custom-tools/bin/helm
               ln -sf /custom-tools/bin/ksops /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops/ksops
           securityContext:
             allowPrivilegeEscalation: false
@@ -66,6 +74,12 @@ spec:
               value: /custom-tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             - name: XDG_CONFIG_HOME
               value: /custom-tools
+            - name: HELM_CACHE_HOME
+              value: /custom-tools/helm/cache
+            - name: HELM_CONFIG_HOME
+              value: /custom-tools/helm/config
+            - name: HELM_DATA_HOME
+              value: /custom-tools/helm/data
             - name: SOPS_AGE_KEY_FILE
               value: /sops-age/keys.txt
           securityContext:

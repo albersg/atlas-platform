@@ -89,6 +89,14 @@ has_argocd_app_crd() {
   kubectl api-resources --verbs=list --namespaced -o name 2>/dev/null | grep -qx 'applications.argoproj.io'
 }
 
+platform_infra_apps() {
+  printf '%s\n' \
+    atlas-platform-istio-base \
+    atlas-platform-istiod \
+    atlas-platform-istio-ingress \
+    atlas-platform-prometheus
+}
+
 check_docker_compose() {
   if docker compose version >/dev/null 2>&1; then
     echo "[ok] docker compose disponible"
@@ -151,15 +159,12 @@ if [[ "$DOCTOR_SCOPE" = "staging" || "$DOCTOR_SCOPE" = "all" ]]; then
   fi
 
   if has_argocd_app_crd; then
-    check_operational_resource \
-      "Argo CD application atlas-platform-istio-base presente" \
-      -n argocd get application atlas-platform-istio-base
-    check_operational_resource \
-      "Argo CD application atlas-platform-istiod presente" \
-      -n argocd get application atlas-platform-istiod
-    check_operational_resource \
-      "Argo CD application atlas-platform-istio-ingress presente" \
-      -n argocd get application atlas-platform-istio-ingress
+    while IFS= read -r app_name; do
+      check_operational_resource \
+        "Argo CD application ${app_name} presente" \
+        -n argocd get application "$app_name"
+    done < <(platform_infra_apps)
+
     check_operational_resource \
       "Argo CD application atlas-platform-staging presente" \
       -n argocd get application atlas-platform-staging
@@ -180,6 +185,21 @@ if [[ "$DOCTOR_SCOPE" = "staging" || "$DOCTOR_SCOPE" = "all" ]]; then
       -n istio-system get service atlas-platform-istio-ingress
   else
     record_operational_failure "[operational-fail] falta el namespace istio-system. La capa infra de Istio no esta desplegada en este cluster."
+  fi
+
+  if kubectl get namespace monitoring >/dev/null 2>&1; then
+    echo "[ok] namespace monitoring presente"
+    check_operational_resource \
+      "statefulset prometheus-atlas-platform-prometheus-kube-prometheus-prometheus disponible en monitoring" \
+      -n monitoring get statefulset prometheus-atlas-platform-prometheus-kube-prometheus-prometheus
+    check_operational_resource \
+      "deployment atlas-platform-prometheus-kube-prometheus-operator disponible en monitoring" \
+      -n monitoring get deployment atlas-platform-prometheus-kube-prometheus-operator
+    check_operational_resource \
+      "service atlas-platform-prometheus-kube-prometheus-prometheus disponible en monitoring" \
+      -n monitoring get service atlas-platform-prometheus-kube-prometheus-prometheus
+  else
+    record_operational_failure "[operational-fail] falta el namespace monitoring. La capa infra de Prometheus no esta desplegada en este cluster."
   fi
 
   if kubectl get namespace atlas-platform-staging >/dev/null 2>&1; then

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: atlas-workloads
+description: Atlas compatibility chart for shared first-party workload manifests.
+type: application
+version: 0.1.0

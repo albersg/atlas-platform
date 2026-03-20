@@ -5,6 +5,7 @@ resources:
   - block-dev-istio-resources.yaml
   - require-istio-infra-core-resources.yaml
   - require-staging-mesh-onboarding.yaml
+  - require-staging-monitoring-onboarding.yaml
   - require-container-resources.yaml
   - require-container-security-context.yaml
   - require-probes.yaml
