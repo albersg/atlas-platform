@@ -190,14 +190,14 @@ if [[ "$DOCTOR_SCOPE" = "staging" || "$DOCTOR_SCOPE" = "all" ]]; then
   if kubectl get namespace monitoring >/dev/null 2>&1; then
     echo "[ok] namespace monitoring presente"
     check_operational_resource \
-      "statefulset prometheus-atlas-platform-prometheus-kube-prometheus-prometheus disponible en monitoring" \
-      -n monitoring get statefulset prometheus-atlas-platform-prometheus-kube-prometheus-prometheus
+      "statefulset prometheus-atlas-platform-prometheus-prometheus disponible en monitoring" \
+      -n monitoring get statefulset prometheus-atlas-platform-prometheus-prometheus
     check_operational_resource \
-      "deployment atlas-platform-prometheus-kube-prometheus-operator disponible en monitoring" \
-      -n monitoring get deployment atlas-platform-prometheus-kube-prometheus-operator
+      "deployment atlas-platform-prometheus-operator disponible en monitoring (kube-prometheus-operator)" \
+      -n monitoring get deployment atlas-platform-prometheus-operator
     check_operational_resource \
-      "service atlas-platform-prometheus-kube-prometheus-prometheus disponible en monitoring" \
-      -n monitoring get service atlas-platform-prometheus-kube-prometheus-prometheus
+      "service atlas-platform-prometheus-prometheus disponible en monitoring" \
+      -n monitoring get service atlas-platform-prometheus-prometheus
   else
     record_operational_failure "[operational-fail] falta el namespace monitoring. La capa infra de Prometheus no esta desplegada en este cluster."
   fi

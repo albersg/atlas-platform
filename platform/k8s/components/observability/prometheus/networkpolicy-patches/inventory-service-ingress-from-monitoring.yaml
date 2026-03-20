@@ -1,0 +1,6 @@
+- op: add
+  path: /spec/ingress/0/from/-
+  value:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: monitoring
