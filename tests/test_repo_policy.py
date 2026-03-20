@@ -348,7 +348,9 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("inventoryMigration:", atlas_values)
         self.assertIn("name: atlas-platform-prometheus", prometheus_chart)
         self.assertIn("kube-prometheus-stack", prometheus_chart)
-        self.assertIn("grafana:", prometheus_values)
+        self.assertIn("kube-prometheus-stack:", prometheus_values)
+        self.assertIn("admissionWebhooks:", prometheus_values)
+        self.assertIn("defaultRules:", prometheus_values)
         self.assertIn("name: atlas-platform-prometheus", prometheus_app)
         self.assertIn("namespace: monitoring", prometheus_app)
         self.assertIn("Helm owns reusable bases", operations_overview)
@@ -980,8 +982,17 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn('"$ROOT_DIR/scripts/gitops/wait-app.sh" "$app_name"', deploy_script)
         self.assertIn("atlas-platform-prometheus", deploy_script)
         self.assertIn("ensure_gateway_ready_for_mesh_smoke", deploy_script)
+        self.assertIn("refresh_staging_local_workloads_for_mutable_images", deploy_script)
+        rollout_restart = (
+            'kubectl -n "$STAGING_NAMESPACE" rollout restart '
+            "deployment/inventory-service deployment/web"
+        )
         self.assertIn(
-            '"$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging', deploy_script
+            rollout_restart,
+            deploy_script,
+        )
+        self.assertIn(
+            '"$ROOT_DIR/scripts/k3s/cluster/status.sh" "$STAGING_NAMESPACE"', deploy_script
         )
         self.assertIn(
             '"$ROOT_DIR/scripts/k3s/verify/smoke.sh" "$ARGOCD_ENVIRONMENT"', deploy_script
@@ -995,6 +1006,7 @@ class RepoPolicyTests(unittest.TestCase):
         self.assertIn("== Argo CD Applications ==", status_script)
         self.assertIn("wait_for_sidecar_ready", smoke_script)
         self.assertIn("require_sidecar_injection", smoke_script)
+        self.assertIn('wait_for_http "API metrics ${ENVIRONMENT}"', smoke_script)
         self.assertIn("deployment/atlas-platform-istio-ingress", smoke_script)
 
     def test_doctor_and_compose_tasks_preflight_docker_compose(self) -> None:

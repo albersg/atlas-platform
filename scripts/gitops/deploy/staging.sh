@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ARGOCD_REPO_SECRET_NAME="${ARGOCD_REPO_SECRET_NAME:-argocd-repo-atlas-platform}"
 STAGING_LOCAL_IMAGES="${STAGING_LOCAL_IMAGES:-1}"
 ARGOCD_WAIT_TIMEOUT_SECONDS="${ARGOCD_WAIT_TIMEOUT_SECONDS:-600}"
+STAGING_NAMESPACE="${STAGING_NAMESPACE:-atlas-platform-staging}"
 
 platform_infra_apps() {
   printf '%s\n' \
@@ -42,6 +43,17 @@ ensure_gateway_ready_for_mesh_smoke() {
   fi
 }
 
+refresh_staging_local_workloads_for_mutable_images() {
+  if [[ "$STAGING_LOCAL_IMAGES" != "1" ]]; then
+    return
+  fi
+
+  echo "Reiniciando workloads staging-local para recargar imagenes locales mutables..."
+  kubectl -n "$STAGING_NAMESPACE" rollout restart deployment/inventory-service deployment/web >/dev/null
+  kubectl -n "$STAGING_NAMESPACE" rollout status deployment/inventory-service --timeout="${ARGOCD_WAIT_TIMEOUT_SECONDS}s"
+  kubectl -n "$STAGING_NAMESPACE" rollout status deployment/web --timeout="${ARGOCD_WAIT_TIMEOUT_SECONDS}s"
+}
+
 ATLAS_DOCTOR_SCOPE=staging "$ROOT_DIR/scripts/k3s/cluster/doctor.sh"
 
 if [[ "$STAGING_LOCAL_IMAGES" != "1" ]]; then
@@ -70,7 +82,8 @@ done < <(platform_infra_apps)
 
 ensure_gateway_ready_for_mesh_smoke
 "$ROOT_DIR/scripts/gitops/wait-app.sh" atlas-platform-staging argocd "$ARGOCD_WAIT_TIMEOUT_SECONDS"
-"$ROOT_DIR/scripts/k3s/cluster/status.sh" atlas-platform-staging
-"$ROOT_DIR/scripts/k3s/verify/smoke.sh" "$ARGOCD_ENVIRONMENT" atlas-platform-staging staging.atlas.example.com api.staging.atlas.example.com
+refresh_staging_local_workloads_for_mutable_images
+"$ROOT_DIR/scripts/k3s/cluster/status.sh" "$STAGING_NAMESPACE"
+"$ROOT_DIR/scripts/k3s/verify/smoke.sh" "$ARGOCD_ENVIRONMENT" "$STAGING_NAMESPACE" staging.atlas.example.com api.staging.atlas.example.com
 
 echo "Despliegue staging via Argo CD completado."
