@@ -118,12 +118,13 @@ Then jump back into the failing area:
 
 Read in this order:
 
-1. [What is Atlas Platform?](what-is-atlas-platform.md)
-2. [Architecture overview](../architecture/overview.md)
-3. [Platform delivery architecture](../architecture/platform-delivery-architecture.md)
-4. [Operating model](../project/operating-model.md)
-5. [Governance](../project/governance.md)
-6. [ADR 0001 - Monorepo vs multirepo](../adr/0001-monorepo-vs-multirepo.md)
+1. [Rebuild this platform by hand](rebuild-this-platform.md)
+2. [What is Atlas Platform?](what-is-atlas-platform.md)
+3. [Architecture overview](../architecture/overview.md)
+4. [Platform delivery architecture](../architecture/platform-delivery-architecture.md)
+5. [Operating model](../project/operating-model.md)
+6. [Governance](../project/governance.md)
+7. [ADR 0001 - Monorepo vs multirepo](../adr/0001-monorepo-vs-multirepo.md)
 
 Read next after that: [GitOps bootstrap](../operations/gitops-bootstrap.md) and [Tool ownership matrix](../reference/tool-ownership-matrix.md) if you want the practical implementation split by tool.
 

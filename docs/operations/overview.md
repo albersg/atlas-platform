@@ -4,6 +4,26 @@ This section explains how Atlas Platform moves from local development into the
 repository's non-production platform workflows. Read it as an environment ladder:
 start simple, then add more platform concepts only when you need them.
 
+## Three ideas to keep in your head while reading
+
+- A local environment is for learning and coding quickly on one machine.
+- A cluster environment is for checking how the app behaves when Kubernetes is in charge.
+- A GitOps environment is for checking how the platform behaves when Git, Argo CD,
+  encrypted secrets, and staged infrastructure all work together.
+
+If those three ideas are clear, the rest of the operations docs stop feeling like
+random tool accumulation.
+
+## A few words that matter a lot here
+
+| Word | Plain-language meaning in these docs |
+| --- | --- |
+| reconcile | notice that the live cluster differs from Git and make the cluster match Git again |
+| overlay | the environment-specific layer that changes a reusable base for `dev`, `staging-local`, or `staging` |
+| platform-infra | shared infrastructure apps such as Istio and Prometheus that support workloads but are not the workload itself |
+| workload | the application resources for Atlas Platform itself, such as the backend, frontend, jobs, and their service wiring |
+| canonical staging | the stricter, reviewable pre-production path that uses promoted registry digests instead of local images |
+
 ## Platform toolchain at a glance
 
 | Tool or concept | Role in Atlas Platform |
@@ -43,6 +63,13 @@ start simple, then add more platform concepts only when you need them.
 | `dev` | validate Kubernetes overlays with local images | `k8s-build-images`, `k8s-import-images`, `k8s-deploy-dev` |
 | `staging-local` | rehearse Argo CD + SOPS on a local cluster | `gitops-deploy-staging` |
 | `staging` | canonical pre-production path | digest promotion plus Argo CD reconciliation |
+
+You can think of the ladder this way:
+
+- Local proves your code can run.
+- `dev` proves your manifests can run in Kubernetes.
+- `staging-local` proves the staged architecture can run on your local cluster.
+- `staging` proves the same architecture can consume trusted release artifacts by digest.
 
 ## The final architecture in plain language
 

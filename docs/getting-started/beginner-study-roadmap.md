@@ -12,6 +12,8 @@ This roadmap is intentionally linear. Each step tells you:
 
 If you already know your immediate goal, use [Choose your path](choose-your-path.md)
 instead.
+If you want a build-it-yourself implementation route instead of a reading order,
+use [Rebuild this platform by hand](rebuild-this-platform.md).
 
 ## How to use this roadmap
 
@@ -129,5 +131,7 @@ Read these in order for the best single-pass journey:
 1. [Learning path](learning-path.md) for the shorter phased version.
 2. [Choose your path](choose-your-path.md) if your goal is now more specific than
    "learn everything."
-3. [Tool ownership matrix](../reference/tool-ownership-matrix.md) when you start
+3. [Rebuild this platform by hand](rebuild-this-platform.md) if you want to recreate
+   the architecture phase by phase in another repo.
+4. [Tool ownership matrix](../reference/tool-ownership-matrix.md) when you start
    asking "which layer owns this behavior?"

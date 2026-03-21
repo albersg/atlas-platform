@@ -5,6 +5,8 @@ repo purpose, then learn the tools, then learn the architecture, then practice
 the development and operations workflows in that order.
 If you want the most explicit zero-to-expert reading order, use
 [Beginner study roadmap](getting-started/beginner-study-roadmap.md).
+If you want the staged build-it-yourself version, use
+[Rebuild this platform by hand](getting-started/rebuild-this-platform.md).
 If you already know your goal, jump to
 [Choose your path](getting-started/choose-your-path.md).
 
@@ -13,16 +15,17 @@ If you already know your goal, jump to
 1. [What is Atlas Platform?](getting-started/what-is-atlas-platform.md)
 2. [Tooling primer](getting-started/tooling-primer.md)
 3. [Beginner study roadmap](getting-started/beginner-study-roadmap.md)
-4. [Learning path](getting-started/learning-path.md)
-5. [First-day setup](getting-started/quickstart.md)
-6. [Repository tour](getting-started/repository-map.md)
-7. [Glossary](reference/glossary.md)
-8. [Architecture overview](architecture/overview.md)
-9. [Platform delivery architecture](architecture/platform-delivery-architecture.md)
-10. [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md)
-11. [Local development](development/local-development.md)
-12. [Quality and CI](development/quality-and-ci.md)
-13. [Operations overview](operations/overview.md)
+4. [Rebuild this platform by hand](getting-started/rebuild-this-platform.md)
+5. [Learning path](getting-started/learning-path.md)
+6. [First-day setup](getting-started/quickstart.md)
+7. [Repository tour](getting-started/repository-map.md)
+8. [Glossary](reference/glossary.md)
+9. [Architecture overview](architecture/overview.md)
+10. [Platform delivery architecture](architecture/platform-delivery-architecture.md)
+11. [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md)
+12. [Local development](development/local-development.md)
+13. [Quality and CI](development/quality-and-ci.md)
+14. [Operations overview](operations/overview.md)
 
 ## Choose your next guide
 
@@ -30,6 +33,7 @@ If you already know your goal, jump to
 | --- | --- |
 | Understand the purpose and boundaries of the repo | [What is Atlas Platform?](getting-started/what-is-atlas-platform.md) |
 | Learn everything from zero in one explicit guided order | [Beginner study roadmap](getting-started/beginner-study-roadmap.md) |
+| Rebuild a repo like this phase by phase | [Rebuild this platform by hand](getting-started/rebuild-this-platform.md) |
 | Learn what the tool names mean before using them | [Tooling primer](getting-started/tooling-primer.md) |
 | Set up your machine on day one | [First-day setup](getting-started/quickstart.md) |
 | Learn where code and platform assets live | [Repository tour](getting-started/repository-map.md) |
@@ -62,7 +66,7 @@ start with [Beginner study roadmap](getting-started/beginner-study-roadmap.md).
 | use `staging-local` | [Staging-local](operations/staging-local.md) | [Service mesh](operations/service-mesh.md) -> [Monitoring](operations/monitoring.md) -> [Canonical staging](operations/canonical-staging.md) |
 | promote to canonical staging | [Release workflow](operations/release-workflow.md) | [Staging promotion](operations/staging-promotion.md) -> [Canonical staging](operations/canonical-staging.md) -> [Image promotion runbook](deployment/releases/IMAGE_PROMOTION.md) |
 | troubleshoot something | [Troubleshooting](reference/troubleshooting.md) | [Command reference](reference/commands.md) -> [Configuration reference](reference/configuration.md) -> the failing workflow guide |
-| replicate this architecture in another repo | [Architecture overview](architecture/overview.md) | [Platform delivery architecture](architecture/platform-delivery-architecture.md) -> [Operating model](project/operating-model.md) -> [Governance](project/governance.md) |
+| replicate this architecture in another repo | [Rebuild this platform by hand](getting-started/rebuild-this-platform.md) | [Architecture overview](architecture/overview.md) -> [Platform delivery architecture](architecture/platform-delivery-architecture.md) -> [Operating model](project/operating-model.md) -> [Governance](project/governance.md) |
 
 For the full routed version, use [Choose your path](getting-started/choose-your-path.md).
 

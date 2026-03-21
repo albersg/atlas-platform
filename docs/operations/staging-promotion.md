@@ -8,6 +8,15 @@ If you remember one sentence, remember this one: promotion changes Git to point
 at trusted digests, and Argo CD deploys that Git change only after the promotion
 PR is reviewed and merged.
 
+## What a beginner should hear in plain language
+
+Promotion does not mean "log into the cluster and change the image." In this repo
+promotion means "change the Git files that define canonical staging, verify the
+new images are trusted, and let Argo CD notice that Git change and apply it."
+
+That distinction matters because canonical `staging` is GitOps-managed. A direct
+cluster edit would be temporary and would not leave a reviewable history.
+
 ## What promotion is for
 
 - move canonical `staging` from placeholder or old digests to a specific release,
@@ -33,6 +42,13 @@ This is the bridge between the release workflow and the real staging environment
 - a branch or commit containing the desired staging manifest state,
 - access to the SOPS key if canonical overlay validation must decrypt secrets.
 
+If those inputs sound abstract, translate them this way:
+
+- backend digest = the exact backend image fingerprint to trust,
+- frontend digest = the exact frontend image fingerprint to trust,
+- branch or commit = the Git revision whose manifests you want canonical staging to use,
+- SOPS key = the decryption authority needed if validation must read encrypted secrets.
+
 ## Local helper
 
 ```bash
@@ -51,6 +67,10 @@ This is the bridge between the release workflow and the real staging environment
 
 That last step matters: digest rewrite and trust verification are intentionally
 coupled, so canonical staging does not drift toward unverified images.
+
+In other words, the helper does not just edit text. It edits the image references
+and then immediately asks, "are these exact images actually allowed to enter
+canonical staging?"
 
 ## What the GitHub Actions promotion workflow does
 

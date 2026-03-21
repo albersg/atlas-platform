@@ -6,6 +6,13 @@ uses encrypted manifests, and expects registry images pinned by digest.
 This is the environment you trust for release-like validation. It is intentionally
 stricter than `staging-local`.
 
+## What "canonical" means here
+
+In these docs, canonical means "the version we treat as the real reference path,"
+not "the version that is easiest to run locally." Canonical `staging` is where
+the repo proves that reviewable Git state, trusted images, encrypted overlays,
+and staged runtime checks all work together.
+
 ## Before you start
 
 You should already understand:
@@ -25,6 +32,20 @@ STAGING_LOCAL_IMAGES=0 ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gi
 mise run k8s-status-staging
 mise run k8s-access-staging
 ```
+
+Read that sequence like this:
+
+1. `k8s-doctor` checks whether your machine, credentials, helper tools, and
+   cluster prerequisites are in place.
+2. `k8s-validate-overlays` proves the rendered manifests, policies, trust rules,
+   and mesh analysis still pass before deployment.
+3. `STAGING_LOCAL_IMAGES=0` tells the shared deploy wrapper to use canonical
+   staging behavior instead of the local-image rehearsal path.
+4. `ARGOCD_APP_REVISION=<remote-branch-or-commit>` tells Argo CD which Git
+   revision to test in the staged topology.
+5. `gitops-deploy-staging` applies the staged GitOps workflow.
+6. `k8s-status-staging` and `k8s-access-staging` help you verify what actually
+   came up and how to reach it.
 
 ## What makes canonical staging different
 
