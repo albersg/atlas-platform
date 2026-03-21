@@ -3,6 +3,12 @@
 Start with the smallest failing layer. Do not jump straight to k3s or GitOps if
 the problem already appears in local validation.
 
+When in doubt, ask these questions in order:
+
+1. Is the problem local app code, local tooling, or cluster state?
+2. Which environment am I actually working in: local, `dev`, `staging-local`, or `staging`?
+3. Which tool owns the failing layer: Docker, Kustomize, Helm, Argo CD, Istio, or Prometheus?
+
 ## Setup and tooling
 
 ### `mise` is not available
@@ -29,6 +35,12 @@ the problem already appears in local validation.
 - check for broken links,
 - check that new files were added to `mkdocs.yml`,
 - check for renamed files that old pages still reference.
+
+### `k8s-validate-overlays` fails
+
+- decide whether the failure is in the workload overlay, the Helm-rendered infra output, or Kyverno policy,
+- rerun the matching render command first,
+- treat signature or secret errors as trust or SOPS problems, not as random YAML issues.
 
 ### `lint` keeps failing after auto-fixes
 
@@ -70,6 +82,25 @@ the problem already appears in local validation.
 - run `mise run k8s-doctor`,
 - confirm Argo CD, the repo credential, and the age key are installed,
 - rerun `mise run gitops-wait-staging` after fixing the missing dependency.
+
+### The wrong staging environment seems to be running
+
+- check whether `STAGING_LOCAL_IMAGES` is set,
+- remember that local k3s usually defaults to the `staging-local` wrapper,
+- set `STAGING_LOCAL_IMAGES=0` only when you intentionally want canonical staging behavior.
+
+### Monitoring looks healthy but the app is missing metrics
+
+- confirm Prometheus is healthy in the `monitoring` namespace,
+- confirm the workload exposes `/metrics`,
+- confirm the workload `ServiceMonitor` exists and has the expected labels,
+- then inspect the service and port name the `ServiceMonitor` targets.
+
+### Mesh traffic behaves differently from `dev`
+
+- remember that `dev` uses Traefik while staged environments use Istio,
+- inspect the Istio gateway and sidecar-enabled workloads before blaming the app,
+- rerun `mise run k8s-smoke-staging` after fixing routing or sidecar issues.
 
 ### Restore or staging delete refuses to run
 

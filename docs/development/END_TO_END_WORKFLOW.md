@@ -1,6 +1,7 @@
 # Daily Workflow And Change Lifecycle
 
-This is the standard path for taking a change from idea to validated repository state.
+This is the standard path for taking a change from idea to validated repository
+state. It is the safest default workflow if you are unsure what to do next.
 
 ## 1. Start a change safely
 
@@ -22,6 +23,9 @@ Choose one of these:
 - full stack: `mise run compose-up`
 - Kubernetes lab: `mise run k8s-deploy-dev`
 
+Pick the smallest loop that proves the change. Do not jump into GitOps or staging
+workflows unless the change actually needs them.
+
 Read more in [Local development](local-development.md) and
 [Operations overview](../operations/overview.md).
 
@@ -34,6 +38,9 @@ For a normal feature or fix, the expected order is:
 3. add a migration if persistence changes,
 4. update documentation if behavior, commands, or workflows change,
 5. inspect the diff before validation.
+
+If the change affects platform architecture, environment behavior, monitoring,
+release, or troubleshooting, update the docs in the same branch.
 
 ## 4. Run the normal validation path
 
@@ -71,6 +78,13 @@ mise run ci
 - Use [Staging-local](../operations/staging-local.md) when you want to rehearse the GitOps topology locally.
 - Use [Canonical staging](../operations/canonical-staging.md) and
   [Staging promotion](../operations/staging-promotion.md) when the change is ready for the real staging path.
+
+Helpful rule:
+
+- local proves app behavior,
+- `dev` proves Kubernetes behavior,
+- `staging-local` proves the GitOps topology locally,
+- canonical `staging` proves the release-like contract.
 
 ## 7. Pull request readiness checklist
 

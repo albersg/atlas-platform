@@ -1,7 +1,8 @@
 # Configuration And Environment Variables
 
 This page lists the most important runtime and workflow variables used by the repo.
-It is not a replacement for reading the scripts, but it gives contributors a safe starting point.
+It is not a replacement for reading the scripts, but it gives contributors a safe
+starting point and tells you which variables matter in which workflow.
 
 ## Backend runtime
 
@@ -33,6 +34,9 @@ Defined by `apps/web/src/vite-env.d.ts` and Sentry setup.
 | `STAGING_LOCAL_IMAGES` | choose local staging-local vs canonical staging behavior | Set `0` to avoid the local-image wrapper |
 | `SOPS_AGE_KEY` | key material for encrypted overlay validation | Needed in some CI and promotion paths |
 
+Use these variables when you are working with Argo CD, encrypted overlays, or
+promotion-related validation.
+
 ## Safety confirmations
 
 | Variable | Role | Notes |
@@ -48,6 +52,14 @@ Defined by `apps/web/src/vite-env.d.ts` and Sentry setup.
 | `ATLAS_DOCTOR_SCOPE` | relax doctor checks for local-only work | `dev` gives a lighter readiness check |
 | `ATLAS_POSTGRES_DRY_RUN` | inspect backup/restore flow without changing the cluster | Set `1` for dry-run behavior |
 | `MISE_LINT_MAX_TRIES` | retry cap for `mise run lint` | Defaults to `3` |
+
+## How to think about these variables
+
+- Runtime variables affect how the application behaves.
+- GitOps variables affect which revision or image source staged environments use.
+- Safety variables exist to slow down destructive operations on purpose.
+- Diagnostic variables help you inspect behavior without changing the repo's normal
+  contract.
 
 ## Default local endpoints
 

@@ -17,8 +17,11 @@
 - `pytest`: the backend test runner.
 - `uv`: the Python package manager and command runner used by the backend.
 - `npm`: the Node package manager used by the frontend.
+- `TypeScript`: the typed JavaScript superset used by the frontend.
 - `Vite`: the frontend dev server and production bundler for `apps/web`.
 - `FastAPI`: the backend web framework used by `inventory-service`.
+- `SQLAlchemy`: the backend ORM and database access layer.
+- `Alembic`: the database migration tool used by the backend.
 - `PostgreSQL`: the main relational database used by the backend and non-production clusters.
 - `Docker`: the container runtime used to build and run local or published images.
 - `Docker Compose`: the multi-container local app workflow that brings up frontend, backend, and PostgreSQL together.
@@ -37,12 +40,16 @@
 - `k3s`: the lightweight Kubernetes distribution used for local cluster learning and validation.
 - `kubectl`: the standard CLI for talking to a Kubernetes cluster.
 - `Kustomize`: the manifest composition tool used to build Kubernetes overlays.
+- `Helm`: the package manager used here for reusable workload and platform add-on bases.
 - `GitOps`: the deployment model where Argo CD reconciles manifests from the repository.
 - `Argo CD`: the GitOps controller that watches the repo and syncs Kubernetes resources into the cluster.
 - `SOPS`: the tool used to keep secrets encrypted in the repo.
 - `age`: the encryption key format and tooling used by SOPS in this repo.
 - `KSOPS`: the Kustomize plugin that decrypts SOPS-managed secrets during rendering.
 - `Kyverno`: the policy engine used to validate rendered overlays against repository policy bundles.
+- `service mesh`: a networking layer around services; in this repo, Istio is the staged mesh implementation.
+- `Prometheus`: the metrics collection system used in staged environments.
+- `ServiceMonitor`: the Kubernetes object that tells Prometheus which service endpoint to scrape.
 - `digest promotion`: updating the staging image references to immutable `sha256:` digests instead of mutable tags.
 - `Trivy`: the image scanner used in the image release workflow.
 - `Cosign`: the signing tool used to verify trust for published images.

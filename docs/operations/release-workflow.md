@@ -3,6 +3,9 @@
 Atlas Platform builds release images from `main` and treats those images as the
 source material for canonical staging.
 
+This page explains the release side of the delivery story. Read it after you
+understand GitOps and the staging environments.
+
 ## Principles
 
 - build each image once per commit on `main`,
@@ -30,12 +33,23 @@ Tooling behind those steps:
 - Syft generates SBOM files that describe what is inside each image.
 - Cosign signs the image digests and attaches the SBOM attestations.
 
+Expected result: you get backend and frontend digests that canonical `staging` can
+trust and promote.
+
 ## Why digests matter
 
 - tags can move,
 - digests are immutable,
 - staging should point at an exact released artifact,
 - migration jobs and backend deployments must stay aligned to the same backend digest.
+
+## How release and GitOps connect
+
+- The release workflow produces trusted images.
+- The promotion workflow updates Git to point at those exact digests.
+- Argo CD then reconciles that Git state into canonical `staging`.
+
+Release does not deploy by itself. It creates the artifacts that GitOps later uses.
 
 ## Local preparation commands
 

@@ -17,10 +17,16 @@ nav:
   - Home: index.md
   - Start Here:
       - What is Atlas Platform?: getting-started/what-is-atlas-platform.md
+      - Tooling primer: getting-started/tooling-primer.md
       - Learning path: getting-started/learning-path.md
       - First-day setup: getting-started/quickstart.md
       - Repository tour: getting-started/repository-map.md
       - Glossary: reference/glossary.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Platform delivery architecture: architecture/platform-delivery-architecture.md
+      - Deployment topology: architecture/deployment-topology.md
+      - Hexagonal and screaming architecture: architecture/hexagonal-screaming-architecture.md
   - Development:
       - Daily workflow and change lifecycle: development/END_TO_END_WORKFLOW.md
       - Local development: development/local-development.md
@@ -36,6 +42,7 @@ nav:
       - k3s dev environment: operations/k3s-dev.md
       - GitOps bootstrap: operations/gitops-bootstrap.md
       - Service mesh: operations/service-mesh.md
+      - Monitoring: operations/monitoring.md
       - Staging-local: operations/staging-local.md
       - Canonical staging: operations/canonical-staging.md
       - Backup and restore: operations/backup-restore.md
@@ -46,10 +53,6 @@ nav:
       - GitOps runbook: deployment/gitops/ARGOCD_SOPS_RUNBOOK.md
       - Image promotion runbook: deployment/releases/IMAGE_PROMOTION.md
       - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
-  - Architecture:
-      - Overview: architecture/overview.md
-      - Hexagonal and screaming architecture: architecture/hexagonal-screaming-architecture.md
-      - Deployment topology: architecture/deployment-topology.md
   - Reference:
       - Command reference: reference/commands.md
       - Configuration and environment variables: reference/configuration.md

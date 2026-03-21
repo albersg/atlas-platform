@@ -3,3 +3,9 @@ kind: Component
 
 resources:
   - inventory-service-monitor.yaml
+
+patches:
+  - path: networkpolicy-patches/inventory-service-ingress-from-monitoring.yaml
+    target:
+      kind: NetworkPolicy
+      name: inventory-service

@@ -25,6 +25,7 @@ repos:
       - id: check-vcs-permalinks
       - id: check-yaml
         args: [--allow-multiple-documents]
+        exclude: ^platform/helm/.*/templates/.*\.ya?ml$
       - id: detect-private-key
       - id: destroyed-symlinks
       - id: forbid-new-submodules
@@ -53,7 +54,7 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
-        exclude: ^(platform/argocd/core/upstream/install-v2\.13\.3\.yaml|platform/k8s/overlays/.*/secrets/.*\.enc\.yaml)$
+        exclude: ^(platform/argocd/core/upstream/install-v2\.13\.3\.yaml|platform/k8s/overlays/.*/secrets/.*\.enc\.yaml|platform/helm/.*/templates/.*\.ya?ml)$
 
   - repo: https://github.com/crate-ci/typos
     rev: a8d8e187146634c459c27ade2d3e338569378720 # frozen: v1.44.0 # pragma: allowlist secret

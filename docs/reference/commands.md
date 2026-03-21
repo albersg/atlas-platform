@@ -532,7 +532,7 @@ Each command section answers the same questions:
 - Under the hood: runs `./scripts/gitops/deploy/staging.sh`.
 - Important detail: by default on local k3s it uses `staging-local`; set `STAGING_LOCAL_IMAGES=0` to target canonical `staging` behavior.
 - Important detail: it waits for `atlas-platform-istio-base`, `atlas-platform-istiod`, `atlas-platform-istio-ingress`, and `atlas-platform-prometheus` before the Atlas workload app, then prints staging status and runs mesh-aware smoke checks.
-- Important detail: local render and policy validation for the Prometheus slice are already part of the repo contract; live Prometheus proof still depends on the target cluster actually converging the `monitoring` namespace resources.
+- Important detail: Prometheus validation only counts when the `monitoring` namespace resources actually converge in the target cluster; rendering alone is not enough.
 - Success looks like: Argo CD infra sync, workload sync, and smoke checks all succeed.
 - Run next: `mise run k8s-status-staging` and `mise run k8s-access-staging`.
 
@@ -577,3 +577,4 @@ Each command section answers the same questions:
 - [Configuration and environment variables](configuration.md)
 - [Troubleshooting](troubleshooting.md)
 - [Operations overview](../operations/overview.md)
+- [Monitoring](../operations/monitoring.md)

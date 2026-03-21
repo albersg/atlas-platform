@@ -1,23 +1,42 @@
 # Learning Path
 
-This page gives a zero-knowledge reader a safe order for learning the repo.
+This page gives a zero-knowledge reader a safe order for learning the repo from
+"I know nothing" to "I can make and validate changes safely."
 
 ## Phase 1: Orient yourself
 
 Read these first:
 
 1. [What is Atlas Platform?](what-is-atlas-platform.md)
-2. [First-day setup](quickstart.md)
-3. [Repository tour](repository-map.md)
-4. [Glossary](../reference/glossary.md)
+2. [Tooling primer](tooling-primer.md)
+3. [First-day setup](quickstart.md)
+4. [Repository tour](repository-map.md)
+5. [Glossary](../reference/glossary.md)
 
 Outcome: you know what the repo is, what environments exist, and where code and
 platform assets live.
 
 Main tools you should recognize by name after this phase: `mise`, `uv`, `npm`,
-Docker, Docker Compose, FastAPI, Vite, PostgreSQL, Kubernetes, k3s, and Argo CD.
+Docker, Docker Compose, FastAPI, Vite, PostgreSQL, Kubernetes, k3s, `kubectl`,
+Helm, Kustomize, and Argo CD.
 
-## Phase 2: Learn the daily workflow
+## Phase 2: Learn the architecture before the workflows
+
+Read these next:
+
+1. [Architecture overview](../architecture/overview.md)
+2. [Platform delivery architecture](../architecture/platform-delivery-architecture.md)
+3. [Deployment topology](../architecture/deployment-topology.md)
+
+Outcome: you understand the final architecture and why each tool owns a different
+part of the system.
+
+Main concepts you should understand after this phase: Helm bases, Kustomize
+overlays, GitOps reconciliation, Argo CD applications, SOPS plus age plus KSOPS,
+Kyverno policy bundles, Istio service mesh boundaries, Prometheus monitoring, and
+workload versus infra ownership.
+
+## Phase 3: Learn the daily workflow
 
 Read these next:
 
@@ -32,7 +51,7 @@ Main tools you should understand after this phase: `pre-commit`, `ruff`,
 `pyright`, `pytest`, `gitleaks`, `detect-secrets`, GitHub Actions, Dependabot,
 and dependency review.
 
-## Phase 3: Learn the application surfaces
+## Phase 4: Learn the application surfaces
 
 Choose the area you will touch:
 
@@ -49,7 +68,7 @@ Tooling emphasis:
 - Frontend: React, Vite, `npm`, TypeScript.
 - Docs: MkDocs Material via `mise run docs-build`.
 
-## Phase 4: Learn the platform journey
+## Phase 5: Learn the platform journey
 
 Move here when local application work is not enough:
 
@@ -57,11 +76,13 @@ Move here when local application work is not enough:
 2. [Local Compose](../operations/local-compose.md)
 3. [k3s dev environment](../operations/k3s-dev.md)
 4. [GitOps bootstrap](../operations/gitops-bootstrap.md)
-5. [Staging-local](../operations/staging-local.md)
-6. [Canonical staging](../operations/canonical-staging.md)
-7. [Backup and restore](../operations/backup-restore.md)
-8. [Release workflow](../operations/release-workflow.md)
-9. [Staging promotion](../operations/staging-promotion.md)
+5. [Service mesh](../operations/service-mesh.md)
+6. [Monitoring](../operations/monitoring.md)
+7. [Staging-local](../operations/staging-local.md)
+8. [Canonical staging](../operations/canonical-staging.md)
+9. [Backup and restore](../operations/backup-restore.md)
+10. [Release workflow](../operations/release-workflow.md)
+11. [Staging promotion](../operations/staging-promotion.md)
 
 Outcome: you understand how a change moves from local work into Kubernetes and
 the GitOps-driven staging model.
@@ -70,7 +91,7 @@ Main tools you should understand after this phase: `kubectl`, k3s, Kustomize,
 Argo CD, GitOps, SOPS, age, KSOPS, Kyverno, Trivy, Cosign, and Syft or SBOM
 generation.
 
-## Phase 5: Keep the deep references nearby
+## Phase 6: Keep the deep references nearby
 
 Use these when you need exact operational detail instead of onboarding context:
 

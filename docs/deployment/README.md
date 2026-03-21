@@ -10,6 +10,7 @@ Start with these teaching pages first:
 - [Operations overview](../operations/overview.md) for the full environment map.
 - [k3s dev environment](../operations/k3s-dev.md) for the shortest local cluster path.
 - [GitOps bootstrap](../operations/gitops-bootstrap.md) for first-time Argo CD and SOPS setup.
+- [Monitoring](../operations/monitoring.md) for Prometheus and `ServiceMonitor` basics.
 - [Staging-local](../operations/staging-local.md) to rehearse the staging topology on k3s.
 - [Canonical staging](../operations/canonical-staging.md) for the real pre-production contract.
 - [Release workflow](../operations/release-workflow.md) and [Staging promotion](../operations/staging-promotion.md) before changing digests.

@@ -53,17 +53,25 @@ def maybe_quit_istio_sidecar() -> None:
     if not quit_istio_sidecar:
         return
 
-    try:
-        request.urlopen(
-            request.Request(
-                "http://127.0.0.1:15020/quitquitquit",
-                method="POST",
-            ),
-            timeout=5,
-        ).read()
-        print("requested istio sidecar shutdown", file=sys.stderr)
-    except error.URLError as exc:
-        print(f"could not request istio sidecar shutdown: {exc}", file=sys.stderr)
+    errors: list[str] = []
+    for url in (
+        "http://127.0.0.1:15020/quitquitquit",
+        "http://127.0.0.1:15000/quitquitquit",
+    ):
+        try:
+            request.urlopen(
+                request.Request(url, method="POST"),
+                timeout=5,
+            ).read()
+            print(f"requested istio sidecar shutdown via {url}", file=sys.stderr)
+            return
+        except error.URLError as exc:
+            errors.append(f"{url}: {exc}")
+
+    print(
+        "could not request istio sidecar shutdown: " + "; ".join(errors),
+        file=sys.stderr,
+    )
 
 
 try:

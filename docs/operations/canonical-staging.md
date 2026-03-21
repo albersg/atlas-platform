@@ -3,6 +3,9 @@
 Canonical `staging` is the repo's real pre-production path. It is GitOps-managed,
 uses encrypted manifests, and expects registry images pinned by digest.
 
+This is the environment you trust for release-like validation. It is intentionally
+stricter than `staging-local`.
+
 ## Before you start
 
 You should already understand:
@@ -30,6 +33,12 @@ mise run k8s-access-staging
 - it relies on immutable digests for promotion,
 - staging-only hardening rules apply here,
 - trusted-image verification matters here.
+
+## Why digest promotion matters here
+
+In canonical `staging`, a tag such as `:main` is not enough. Tags can move. Digests
+cannot. That is why the repo promotes exact `sha256:...` image references instead
+of trusting mutable tags.
 
 ## What to verify after deployment
 
@@ -65,5 +74,6 @@ shape with digest-backed images.
 ## Read next
 
 - [Backup and restore](backup-restore.md)
+- [Monitoring](monitoring.md)
 - [Release workflow](release-workflow.md)
 - [Staging promotion](staging-promotion.md)

@@ -35,10 +35,12 @@ pre-production validation with the same set of commands.
 If this is your first time in the repo, follow this order:
 
 1. Read [`docs/getting-started/what-is-atlas-platform.md`](docs/getting-started/what-is-atlas-platform.md).
-2. Follow [`docs/getting-started/learning-path.md`](docs/getting-started/learning-path.md).
-3. Complete [`docs/getting-started/quickstart.md`](docs/getting-started/quickstart.md).
-4. Use [`docs/development/local-development.md`](docs/development/local-development.md) for daily work.
-5. Use [`docs/operations/overview.md`](docs/operations/overview.md) when you move into k3s, GitOps, or promotion.
+2. Read [`docs/getting-started/tooling-primer.md`](docs/getting-started/tooling-primer.md).
+3. Follow [`docs/getting-started/learning-path.md`](docs/getting-started/learning-path.md).
+4. Complete [`docs/getting-started/quickstart.md`](docs/getting-started/quickstart.md).
+5. Read [`docs/architecture/overview.md`](docs/architecture/overview.md) to understand the final platform shape.
+6. Use [`docs/development/local-development.md`](docs/development/local-development.md) for daily work.
+7. Use [`docs/operations/overview.md`](docs/operations/overview.md) when you move into k3s, GitOps, or promotion.
 
 The full documentation site starts at [`docs/index.md`](docs/index.md).
 
@@ -65,12 +67,15 @@ What these do:
 | Goal | Read this |
 | --- | --- |
 | Understand the repo layout | [`docs/getting-started/repository-map.md`](docs/getting-started/repository-map.md) |
+| Learn the tools before touching code or infra | [`docs/getting-started/tooling-primer.md`](docs/getting-started/tooling-primer.md) |
+| Understand the final Helm + Kustomize + Argo CD architecture | [`docs/architecture/overview.md`](docs/architecture/overview.md), [`docs/architecture/platform-delivery-architecture.md`](docs/architecture/platform-delivery-architecture.md) |
 | Learn the day-to-day change lifecycle | [`docs/development/END_TO_END_WORKFLOW.md`](docs/development/END_TO_END_WORKFLOW.md) |
 | Work on the backend | [`docs/development/backend-development.md`](docs/development/backend-development.md) |
 | Work on the frontend | [`docs/development/frontend-development.md`](docs/development/frontend-development.md) |
 | Run Compose locally | [`docs/operations/local-compose.md`](docs/operations/local-compose.md) |
 | Validate Kubernetes flows | [`docs/operations/k3s-dev.md`](docs/operations/k3s-dev.md) |
 | Learn GitOps bootstrap and staging | [`docs/operations/gitops-bootstrap.md`](docs/operations/gitops-bootstrap.md) |
+| Learn monitoring and how Prometheus sees workloads | [`docs/operations/monitoring.md`](docs/operations/monitoring.md) |
 | Look up commands and environment variables | [`docs/reference/commands.md`](docs/reference/commands.md), [`docs/reference/configuration.md`](docs/reference/configuration.md) |
 
 ## Canonical validation commands
