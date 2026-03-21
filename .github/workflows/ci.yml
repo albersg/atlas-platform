@@ -32,6 +32,9 @@ jobs:
       - name: Bootstrap
         run: mise run bootstrap
 
+      - name: Install frontend dependencies
+        run: cd apps/web && npm ci
+
       - name: Formatting gate
         run: mise run fmt-check
 
