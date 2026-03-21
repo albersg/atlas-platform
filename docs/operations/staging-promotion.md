@@ -24,6 +24,8 @@ PR is reviewed and merged.
 | promotion automation | GitHub Actions workflow | `.github/workflows/promote-staging.yml` |
 | canonical staging image targets | staging image component | `platform/k8s/components/images/staging/kustomization.yaml` |
 
+This is the bridge between the release workflow and the real staging environment.
+
 ## Inputs you need
 
 - a backend digest from the release workflow,
@@ -70,6 +72,8 @@ The `Promote Staging` workflow in `.github/workflows/promote-staging.yml`:
 - a PR leaves a review trail,
 - the exact promoted digests become part of the repository history,
 - trust verification happens before the cluster is asked to consume the images.
+
+Expected result: Git now points canonical `staging` at exact, trusted images.
 
 ## Important rules
 

@@ -3,7 +3,6 @@
 This documentation is organized as a learning system for a beginner. Start with
 repo purpose, then learn the tools, then learn the architecture, then practice
 the development and operations workflows in that order.
-
 If you already know your goal, jump to [Choose your path](getting-started/choose-your-path.md).
 
 ## Recommended reading order

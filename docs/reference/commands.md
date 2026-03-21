@@ -486,6 +486,8 @@ larger workflow.
   11. prints status,
   12. runs mesh-aware smoke checks.
 - Composition: this is the repo's most complete operational command because it ties together doctor checks, Argo CD, infra ordering, image trust, workload sync, and runtime verification.
+- Important detail: by default on local k3s it uses `staging-local`; set `STAGING_LOCAL_IMAGES=0` to target canonical `staging` behavior.
+- Important detail: Prometheus validation only counts when the `monitoring` namespace resources actually converge in the target cluster; rendering alone is not enough.
 - Success looks like: infra apps, workload app, and smoke checks all pass.
 - Run next: `mise run k8s-status-staging` and `mise run k8s-access-staging`.
 
@@ -513,4 +515,5 @@ larger workflow.
 - [Tool ownership matrix](tool-ownership-matrix.md)
 - [Quality and CI](../development/quality-and-ci.md)
 - [Troubleshooting](troubleshooting.md)
+- [Operations overview](../operations/overview.md)
 - [Monitoring](../operations/monitoring.md)

@@ -13,7 +13,9 @@ By the end of this guide you should have:
 - the SOPS age key available to Argo CD,
 - repository credentials installed,
 - the staged application bundle applied,
-- a clear picture of how workload overlays and platform-infra apps split ownership.
+- a clear picture of how workload overlays and platform-infra apps split ownership,
+- a clear understanding of why `staging-local` and canonical `staging` use the
+  same GitOps architecture but different image rules.
 
 ## Tooling explained in repo terms
 
@@ -130,6 +132,7 @@ full contract that later deploy, validation, promotion, and troubleshooting flow
 - `mise run gitops-deploy-staging` waits for the full infra app set before the workload app.
 - `mise run k8s-doctor` and `mise run k8s-status-staging` surface infra-app health separately from workload-app health.
 - `ARGOCD_APP_REVISION=<remote-branch-or-commit>` is the supported way to validate a pushed branch before merge.
+- The staged infra wait includes `atlas-platform-istio-base`, `atlas-platform-istiod`, `atlas-platform-istio-ingress`, and `atlas-platform-prometheus` before the Atlas workload app.
 - Do not commit `.gitops-local/age/keys.txt` or `.gitops-local/ssh/argocd-repo`.
 
 ## Read next

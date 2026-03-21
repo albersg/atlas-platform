@@ -6,6 +6,9 @@ produces trusted artifacts that the promotion and GitOps flows can later use.
 
 ## What release is for in this repo
 
+This page explains the release side of the delivery story. Read it after you
+understand GitOps and the staging environments.
+
 - publish immutable OCI images to GHCR,
 - prove those images pass vulnerability scanning,
 - generate SBOMs,
@@ -32,6 +35,9 @@ promote and deploy."
 | canonical staging image targets | staging image component | `platform/k8s/components/images/staging/kustomization.yaml` |
 
 ## What happens under the hood
+
+Expected result: you get backend and frontend digests that canonical `staging` can
+trust and promote.
 
 The `Release Images` workflow in `.github/workflows/release-images.yml`:
 
@@ -68,6 +74,14 @@ The `Release Images` workflow in `.github/workflows/release-images.yml`:
 
 That is why the canonical staging path promotes `sha256:...` references rather
 than trusting moving tags.
+
+## How release and GitOps connect
+
+- The release workflow produces trusted images.
+- The promotion workflow updates Git to point at those exact digests.
+- Argo CD then reconciles that Git state into canonical `staging`.
+
+Release does not deploy by itself. It creates the artifacts that GitOps later uses.
 
 ## How release composes with promotion and GitOps
 

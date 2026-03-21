@@ -2,7 +2,6 @@
 
 This page gives a zero-knowledge reader a safe order for learning the repo from
 "I know nothing" to "I can make and validate changes safely."
-
 If you already know your job to be done, use
 [Choose your path](choose-your-path.md) for an intent-based route instead.
 

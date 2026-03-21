@@ -160,6 +160,9 @@ Primary owner in this repo:
 | `ATLAS_POSTGRES_STATEFULSET_TIMEOUT_SECONDS` | PostgreSQL rollout timeout | `300` | `scripts/k3s/postgres/lib.sh` | backup and restore helpers |
 | `ATLAS_POSTGRES_RESTORE_WAIT_SECONDS` | wait before restore starts inside job manifest | `300` | `scripts/k3s/postgres/restore.sh`, `scripts/k3s/postgres/lib.sh` | restore helper |
 
+Use these variables when you are working with Argo CD, encrypted overlays, or
+promotion-related validation.
+
 ## Safety confirmations
 
 | Variable | Role | Where enforced | Notes |
@@ -170,6 +173,14 @@ Primary owner in this repo:
 
 These variables are intentionally awkward. They exist to slow down destructive
 actions and force the operator to re-read the target environment.
+
+## How to think about these variables
+
+- Runtime variables affect how the application behaves.
+- GitOps variables affect which revision or image source staged environments use.
+- Safety variables exist to slow down destructive operations on purpose.
+- Diagnostic variables help you inspect behavior without changing the repo's normal
+  contract.
 
 ## Default endpoints and surfaces
 

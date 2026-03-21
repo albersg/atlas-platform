@@ -17,6 +17,11 @@ architecture locally, but it does not replace canonical digest-driven `staging`.
 | deploy orchestration | staged deploy script | `scripts/gitops/deploy/staging.sh` |
 | smoke verification | staged smoke helper | `scripts/k3s/verify/smoke.sh` |
 
+In the current staged slice, `staging-local` is also the default target for the
+platform-infra applications under `platform/helm/istio/` and
+`platform/helm/prometheus/`, plus the first mesh-enabled workload overlay under
+`platform/k8s/components/mesh/istio/`.
+
 ## Main command
 
 ```bash
@@ -103,6 +108,9 @@ the real staging topology.
 - `inventory-service` exposes `/metrics`, and staged overlays compose a workload-owned `ServiceMonitor` labeled for the `atlas-platform-prometheus` release.
 - `mise run k8s-status-staging` shows the `monitoring` namespace alongside the mesh runtime.
 - `mise run k8s-doctor` checks the Prometheus Argo CD app and core monitoring runtime before you trust the environment.
+
+If Prometheus is healthy but the workload is missing from scrape targets, inspect
+the workload `ServiceMonitor` next.
 
 ## Current mesh notes
 

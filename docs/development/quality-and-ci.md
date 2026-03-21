@@ -7,6 +7,9 @@ contract.
 
 ## The quality stack at a glance
 
+If you are a beginner, treat this page as the answer to: "How do I know my change
+is safe before I open a pull request?"
+
 | Layer | Main tools | What they protect | Repo ownership |
 | --- | --- | --- | --- |
 | formatting and basic hygiene | `pre-commit`, `ruff`, `shfmt`, whitespace hooks | readable source and low-noise diffs | `.pre-commit-config.yaml`, `mise.toml` |
@@ -88,6 +91,15 @@ So a failing platform validation is not a side quest. It is part of the same
 quality contract as a failing unit test.
 
 ## How GitHub Actions maps to local work
+
+- `detect-secrets` and `gitleaks` look for committed secrets.
+- `check-github-workflows` and `zizmor` look for unsafe GitHub Actions patterns.
+- `k8s-validate-overlays` renders manifests, applies Kyverno policy bundles, verifies trusted images, and schema-checks the result.
+- `istioctl analyze` checks staged mesh configuration before rollout.
+- The image release path later adds Trivy scanning, Syft SBOM generation, and Cosign signing.
+
+This means validation is not only about code style. It also checks deployment
+correctness, secrets safety, mesh configuration, and supply-chain trust.
 
 Main workflows:
 
