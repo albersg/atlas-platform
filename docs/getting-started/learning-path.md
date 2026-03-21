@@ -2,6 +2,8 @@
 
 This page gives a zero-knowledge reader a safe order for learning the repo from
 "I know nothing" to "I can make and validate changes safely."
+If you want the more detailed version with exact stop points and small hands-on
+checkpoints, use [Beginner study roadmap](beginner-study-roadmap.md).
 If you already know your job to be done, use
 [Choose your path](choose-your-path.md) for an intent-based route instead.
 
@@ -102,3 +104,11 @@ Use these when you need exact operational detail instead of onboarding context:
 - [Image promotion runbook](../deployment/releases/IMAGE_PROMOTION.md)
 - [Configuration reference](../reference/configuration.md)
 - [Troubleshooting](../reference/troubleshooting.md)
+
+## Read next
+
+1. [Beginner study roadmap](beginner-study-roadmap.md) if you want the exact
+   page-by-page order with "move on when" checkpoints.
+2. [Choose your path](choose-your-path.md) if your next goal is now specific.
+3. [Command reference](../reference/commands.md) when overview pages stop being
+   enough.

@@ -6,6 +6,8 @@ matches your job, then follow the linked chain in order.
 If you are brand new to the repo, start with
 [What is Atlas Platform?](what-is-atlas-platform.md) and
 [Tooling primer](tooling-primer.md) first.
+If you want the full beginner journey in one strict sequence, use
+[Beginner study roadmap](beginner-study-roadmap.md).
 
 ## Intent routes
 
@@ -130,4 +132,6 @@ Read next after that: [GitOps bootstrap](../operations/gitops-bootstrap.md) and 
 - Use [Command reference](../reference/commands.md) for exact task behavior.
 - Use [Configuration and environment variables](../reference/configuration.md) for env vars and script inputs.
 - Use [Tool ownership matrix](../reference/tool-ownership-matrix.md) for "which layer owns this" questions.
+- Use [Beginner study roadmap](beginner-study-roadmap.md) for the most explicit
+  zero-to-expert order.
 - Use [Learning path](learning-path.md) for the full zero-to-expert sequence.

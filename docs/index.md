@@ -3,28 +3,33 @@
 This documentation is organized as a learning system for a beginner. Start with
 repo purpose, then learn the tools, then learn the architecture, then practice
 the development and operations workflows in that order.
-If you already know your goal, jump to [Choose your path](getting-started/choose-your-path.md).
+If you want the most explicit zero-to-expert reading order, use
+[Beginner study roadmap](getting-started/beginner-study-roadmap.md).
+If you already know your goal, jump to
+[Choose your path](getting-started/choose-your-path.md).
 
 ## Recommended reading order
 
 1. [What is Atlas Platform?](getting-started/what-is-atlas-platform.md)
 2. [Tooling primer](getting-started/tooling-primer.md)
-3. [Learning path](getting-started/learning-path.md)
-4. [First-day setup](getting-started/quickstart.md)
-5. [Repository tour](getting-started/repository-map.md)
-6. [Glossary](reference/glossary.md)
-7. [Architecture overview](architecture/overview.md)
-8. [Platform delivery architecture](architecture/platform-delivery-architecture.md)
-9. [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md)
-10. [Local development](development/local-development.md)
-11. [Quality and CI](development/quality-and-ci.md)
-12. [Operations overview](operations/overview.md)
+3. [Beginner study roadmap](getting-started/beginner-study-roadmap.md)
+4. [Learning path](getting-started/learning-path.md)
+5. [First-day setup](getting-started/quickstart.md)
+6. [Repository tour](getting-started/repository-map.md)
+7. [Glossary](reference/glossary.md)
+8. [Architecture overview](architecture/overview.md)
+9. [Platform delivery architecture](architecture/platform-delivery-architecture.md)
+10. [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md)
+11. [Local development](development/local-development.md)
+12. [Quality and CI](development/quality-and-ci.md)
+13. [Operations overview](operations/overview.md)
 
 ## Choose your next guide
 
 | If you want to... | Read this next |
 | --- | --- |
 | Understand the purpose and boundaries of the repo | [What is Atlas Platform?](getting-started/what-is-atlas-platform.md) |
+| Learn everything from zero in one explicit guided order | [Beginner study roadmap](getting-started/beginner-study-roadmap.md) |
 | Learn what the tool names mean before using them | [Tooling primer](getting-started/tooling-primer.md) |
 | Set up your machine on day one | [First-day setup](getting-started/quickstart.md) |
 | Learn where code and platform assets live | [Repository tour](getting-started/repository-map.md) |
@@ -43,6 +48,9 @@ If you already know your goal, jump to [Choose your path](getting-started/choose
 
 Use these when you want the docs to tell you what to read next, not just what a
 page covers:
+
+If you want the most explicit beginner sequence with "read this, then try this,"
+start with [Beginner study roadmap](getting-started/beginner-study-roadmap.md).
 
 | If your intent is... | Start here | Then read |
 | --- | --- | --- |
