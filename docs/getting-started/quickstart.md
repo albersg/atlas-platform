@@ -2,6 +2,9 @@
 
 Use this guide when you are starting from zero and want a working local checkout.
 
+If the tool names still feel unfamiliar, read the
+[tooling primer](tooling-primer.md) first and come back here.
+
 ## Goal
 
 By the end of this page you should be able to:
@@ -33,9 +36,13 @@ If these names are new, use this cheat sheet while reading the rest of the docs:
 | Docker Compose | starts the local multi-container app stack with frontend, backend, and PostgreSQL |
 | `kubectl` | command-line client for talking to Kubernetes clusters |
 | k3s | lightweight Kubernetes distribution used for the local `dev` and `staging-local` labs |
+| Helm | reusable packaging layer for Atlas workload bases and platform add-ons |
+| Kustomize | environment overlay layer that adapts shared manifests for `dev`, `staging-local`, and `staging` |
+| Argo CD | GitOps controller that continuously reconciles repo state into the cluster |
 
-You do not need to memorize every tool now. The [glossary](../reference/glossary.md)
-and [learning path](learning-path.md) explain when each one matters.
+You do not need to memorize every tool now. The [glossary](../reference/glossary.md),
+[tooling primer](tooling-primer.md), and [learning path](learning-path.md) explain
+when each one matters.
 
 ## Step 1: Install the pinned toolchain
 
@@ -136,5 +143,6 @@ Next reads: [Frontend development](../development/frontend-development.md).
 
 1. [Repository tour](repository-map.md)
 2. [Glossary](../reference/glossary.md)
-3. [Daily workflow and change lifecycle](../development/END_TO_END_WORKFLOW.md)
-4. [Local development](../development/local-development.md)
+3. [Architecture overview](../architecture/overview.md)
+4. [Daily workflow and change lifecycle](../development/END_TO_END_WORKFLOW.md)
+5. [Local development](../development/local-development.md)

@@ -1,34 +1,71 @@
-# Resumen de arquitectura
+# Architecture Overview
 
-Atlas Platform adopta una arquitectura modular orientada a crecimiento progresivo,
-sin forzar una separacion prematura en muchos repositorios o servicios.
+Atlas Platform is a monorepo that teaches and validates the full path from local
+application development to non-production platform delivery.
 
-## Principios base
+## The short version
 
-- Arquitectura hexagonal dentro de cada servicio.
-- Screaming architecture por capacidad de negocio (`inventory`, `billing`).
-- Monorepo modular con extraccion futura guiada por ADRs y por necesidad real.
-- Contrato operativo compartido entre humanos y agentes.
+- The frontend lives in `apps/web`.
+- The active backend lives in `services/inventory-service`.
+- Helm defines reusable workload and platform add-on bases under `platform/helm/`.
+- Kustomize adapts those shared pieces for each environment under `platform/k8s/`.
+- Argo CD reconciles the Git-defined staging state into the cluster.
+- SOPS plus age plus KSOPS keep encrypted secrets in Git without storing them in
+  plain text.
+- Kyverno validates the rendered manifests before they are trusted.
+- Istio owns the staged service-mesh path.
+- Prometheus owns the first monitoring slice.
 
-## Como se organiza el sistema
+## Why the architecture is split this way
 
-- `apps/web`: interfaz frontend.
-- `services/inventory-service`: servicio backend operativo.
-- `services/billing-service`: scaffold preparado para evolucionar.
-- `platform/k8s`: recursos compartidos, piezas reutilizables y overlays.
-- `platform/argocd`: instalacion y aplicaciones GitOps.
+Different problems need different tools:
 
-## Modelo de despliegue actual
+- Helm is good at packaging reusable bases and upstream-chart wrappers.
+- Kustomize is good at environment-specific overlays and patches.
+- Argo CD is good at continuously reconciling Git state into a cluster.
+- Kyverno is good at enforcing deployment rules over rendered YAML.
+- Istio is good at staged traffic management and mesh-aware routing.
+- Prometheus is good at collecting metrics from cluster services and workloads.
 
-- local: Docker Compose o procesos locales,
-- `dev`: k3s con imagenes locales,
-- `staging`: GitOps con Argo CD, SOPS y digests de registry.
+Using one tool for every concern would make the repo harder to teach and harder to
+change safely.
 
-La arquitectura se ha recortado de forma deliberada a `dev` y `staging` para no
-mezclar responsabilidades no productivas con una futura infraestructura de produccion.
+## Main architecture decisions
 
-## Lecturas relacionadas
+### Application architecture
 
-- [Hexagonal + Screaming Architecture](hexagonal-screaming-architecture.md)
-- [Deployment Topology](deployment-topology.md)
-- [ADR monorepo vs multirepo](../adr/0001-monorepo-vs-multirepo.md)
+- Each service follows hexagonal architecture internally.
+- Business capabilities are organized as screaming architecture boundaries.
+- The repo stays a modular monorepo until a real need justifies extraction.
+
+### Platform architecture
+
+- `platform/helm/` owns reusable bases and add-ons.
+- `platform/k8s/` owns environment overlays, environment patches, and workload-side
+  resources such as the first `ServiceMonitor`.
+- `platform/argocd/` owns GitOps bootstrap and Argo CD applications.
+- `platform/policy/kyverno/` owns policy-as-code validation.
+
+### Environment architecture
+
+- Local is for the fastest app loop.
+- `dev` is the first Kubernetes layer and stays simpler than staged environments.
+- `staging-local` rehearses the real GitOps topology on local k3s.
+- Canonical `staging` is the real pre-production contract and uses registry images
+  pinned by digest.
+
+## What changed in the final architecture
+
+The repo no longer treats all Kubernetes concerns the same way.
+
+- Helm now owns reusable bases and platform add-ons.
+- Kustomize now owns environment overlays and workload adaptation.
+- Argo CD now manages both workload and infra application boundaries.
+- Istio now owns staged ingress and mesh behavior for `staging-local` and `staging`.
+- Prometheus now runs as a dedicated infra add-on in the `monitoring` namespace.
+
+## Read next
+
+1. [Platform delivery architecture](platform-delivery-architecture.md)
+2. [Deployment topology](deployment-topology.md)
+3. [Operations overview](../operations/overview.md)

@@ -1,6 +1,8 @@
 # GitOps Bootstrap
 
-Use this guide when you want a local cluster ready for the GitOps-driven staging path.
+Use this guide when you want a cluster ready for the GitOps-driven staging path.
+This is the first page to read when you want to understand how Argo CD, encrypted
+secrets, Helm, and Kustomize work together.
 
 ## Goal
 
@@ -9,7 +11,9 @@ By the end of this guide you should have:
 - Argo CD core installed,
 - the SOPS age key available to Argo CD,
 - repository credentials installed,
-- the staging application bundle applied.
+- the staging application bundle applied,
+- a clear understanding of why `staging-local` and canonical `staging` use the
+  same GitOps architecture but different image rules.
 
 ## Tooling explained
 
@@ -30,6 +34,19 @@ By the end of this guide you should have:
 - Helm is the reusable base layer for `platform/helm/`, including the Atlas workload compatibility base and infra add-ons such as Istio and Prometheus.
 - Kustomize is the environment overlay layer for `platform/k8s/overlays/`, including KSOPS/SOPS secrets, environment patches, and workload-owned monitoring resources such as the first `inventory-service` `ServiceMonitor` slice.
 - Do not encode the same environment-specific behavior in both Helm values and Kustomize overlays; choose one owning layer for each concern.
+
+## Before you run commands
+
+Make sure you understand these differences:
+
+| Environment | What Argo CD reconciles | Which images it expects |
+| --- | --- | --- |
+| `staging-local` | the local staging wrapper overlay | local `:main` refs imported into k3s |
+| `staging` | the canonical staging overlay | registry images pinned by digest |
+
+The same `gitops-deploy-staging` family of commands appears in both paths. The
+environment meaning changes based on whether you are using the local wrapper or the
+canonical digest-driven path.
 
 ## Recommended order
 
@@ -71,12 +88,13 @@ mise run gitops-apply-apps
 - creates the `atlas-platform-infra` project plus the Istio and Prometheus infra applications and the `atlas-platform-staging` application,
 - patches each environment-aware infra application to `values-staging-local.yaml` or `values-staging.yaml` based on the target rollout mode.
 
+Expected result: Argo CD now knows which apps it should continuously reconcile.
+
 ## Important notes
 
 - `staging-local` is the local rehearsal path; canonical `staging` remains digest-driven.
 - `mise run gitops-deploy-staging` now waits for `atlas-platform-istio-base`, `atlas-platform-istiod`, `atlas-platform-istio-ingress`, and `atlas-platform-prometheus` before the Atlas workload app.
 - `mise run k8s-doctor` and `mise run k8s-status-staging` now surface infra-app health separately from workload-app health.
-- Local validation for this architecture shift is already in place through render, policy, and docs checks; live Prometheus proof is still pending until `atlas-platform-prometheus` converges in the target cluster.
 - Do not commit `.gitops-local/age/keys.txt` or `.gitops-local/ssh/argocd-repo`.
 - If you want to validate a branch before merge, set `ARGOCD_APP_REVISION=<remote-branch-or-commit>`.
 - The repo still uses helper scripts for bootstrap, but once bootstrap is complete Argo CD becomes the system continuously driving cluster state.
@@ -86,4 +104,5 @@ mise run gitops-apply-apps
 - [Staging-local](staging-local.md)
 - [Canonical staging](canonical-staging.md)
 - [Service mesh](service-mesh.md)
+- [Monitoring](monitoring.md)
 - [GitOps runbook](../deployment/gitops/ARGOCD_SOPS_RUNBOOK.md)

@@ -1,52 +1,52 @@
-# Gobernanza del proyecto
+# Project Governance
 
-Atlas Platform combina reglas de colaboracion, seguridad y automatizacion para
-que el flujo de trabajo sea predecible tanto para humanos como para agentes.
+Atlas Platform combines collaboration rules, security requirements, and automation
+so the workflow stays predictable for both humans and agents.
 
-## Documentos de gobierno
+## Governance documents
 
-- `AGENTS.md`: contrato operativo para sesiones agenticas.
-- `CONTRIBUTING.md`: flujo local, requisitos de PR y calidad de commits.
-- `SECURITY.md`: canal de reporte y requisitos de desarrollo seguro.
-- `.github/CODEOWNERS`: ownership obligatorio para revision.
-- `.github/pull_request_template.md`: estructura base de las PRs.
+- `AGENTS.md`: operating contract for agent sessions.
+- `CONTRIBUTING.md`: local workflow, PR expectations, and commit quality rules.
+- `SECURITY.md`: reporting channel and secure-development requirements.
+- `.github/CODEOWNERS`: required review ownership.
+- `.github/pull_request_template.md`: base pull request structure.
 
-## Reglas de colaboracion
+## Collaboration rules
 
-Resumen de `CONTRIBUTING.md`:
+Summary of `CONTRIBUTING.md`:
 
-- empieza cada cambio con `git status`,
-- mantén los cambios pequenos y acotados,
-- no bypasses hooks ni CI,
-- no incluir datos sensibles en commits,
-- ejecuta `mise run check`, `mise run security` y `mise run ci` antes de la PR.
+- start each change with `git status`,
+- keep changes small and in scope,
+- do not bypass hooks or CI,
+- never commit sensitive material,
+- run `mise run check`, `mise run security`, and `mise run ci` before a PR.
 
-## Reglas para agentes
+## Agent rules
 
-Resumen de `AGENTS.md`:
+Summary of `AGENTS.md`:
 
-- no usar `git commit --no-verify`,
-- no ejecutar acciones destructivas sin peticion explicita,
-- no tocar credenciales ni material sensible,
-- usar `mise run ...` como interfaz operativa principal,
-- mantener cambios minimos, reversibles y en alcance.
+- do not use `git commit --no-verify`,
+- do not run destructive actions without explicit request,
+- do not touch credentials or sensitive material,
+- use `mise run ...` as the primary operational interface,
+- keep changes minimal, reversible, and in scope.
 
-## Politica de seguridad
+## Security policy
 
-Resumen de `SECURITY.md`:
+Summary of `SECURITY.md`:
 
-- no abrir issues publicos con detalles de explotacion,
-- reportar vulnerabilidades de forma privada a los maintainers,
-- incluir impacto, reproduccion y archivos afectados,
-- mantener minimo privilegio, escaneo de material sensible y validacion previa al merge.
+- do not open public issues with exploit details,
+- report vulnerabilities privately to maintainers,
+- include impact, reproduction, and affected files,
+- maintain least privilege, secret scanning, and validation before merge.
 
-## Ownership y revision
+## Ownership and review
 
-- al menos un CODEOWNER debe revisar los cambios relevantes,
-- los workflows y automatizaciones deben mantenerse fijados por SHA completo,
-- cambios con impacto de seguridad deben incluir riesgo y rollback en la PR.
+- at least one CODEOWNER should review relevant changes,
+- workflows and automation should stay pinned by full SHA where required,
+- security-sensitive changes should describe risk and rollback in the pull request.
 
-## Referencias en GitHub
+## GitHub references
 
 - [AGENTS.md](https://github.com/albersg/atlas-platform/blob/main/AGENTS.md)
 - [CONTRIBUTING.md](https://github.com/albersg/atlas-platform/blob/main/CONTRIBUTING.md)

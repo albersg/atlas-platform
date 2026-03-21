@@ -27,6 +27,7 @@ If you are changing product behavior, you usually start in `apps/web` or
 
 ## Platform and delivery assets
 
+- `platform/helm`: reusable Helm wrapper charts for Atlas workload bases and platform add-ons such as Istio and Prometheus.
 - `platform/k8s`: shared manifests, components, and overlays for `dev`, `staging`, and `staging-local`.
 - `platform/argocd`: Argo CD bootstrap and GitOps application definitions.
 - `platform/policy`: policy checks applied to non-production overlays.
@@ -50,9 +51,12 @@ you usually start in `platform/`.
 | `uv`, FastAPI, `pytest` | `services/inventory-service/`, `pyproject.toml`, backend tests |
 | `npm`, Vite, TypeScript | `apps/web/`, `apps/web/package.json`, `apps/web/vite.config.ts` |
 | Docker and Docker Compose | `docker-compose.yml`, app Dockerfiles, `scripts/compose/` |
+| Helm | `platform/helm/`, `scripts/gitops/render-platform-infra.sh` |
 | Kubernetes, k3s, `kubectl`, Kustomize | `platform/k8s/`, `scripts/k3s/`, `scripts/gitops/render-overlay.sh` |
 | Argo CD, GitOps, SOPS, age, KSOPS | `platform/argocd/`, `platform/k8s/overlays/`, `scripts/gitops/` |
 | Kyverno policies | `platform/policy/kyverno/` |
+| Istio service mesh | `platform/helm/istio/`, `platform/k8s/components/mesh/istio/` |
+| Prometheus monitoring | `platform/helm/prometheus/`, `platform/k8s/components/observability/prometheus/` |
 | Trivy, Cosign, Syft, SBOM release flow | `.github/workflows/release-images.yml`, `scripts/release/` |
 | GitHub Actions and dependency review | `.github/workflows/` |
 | Dependabot | `.github/dependabot.yml` |
@@ -80,8 +84,10 @@ in `mise.toml` and then the script it calls.
 | Web UI | `apps/web` |
 | API, domain rules, persistence, migrations | `services/inventory-service` |
 | Docker-based local stack | `docker-compose.yml` and app folders |
+| Helm chart defaults or add-on configuration | `platform/helm` |
 | k3s overlays or runtime settings | `platform/k8s` |
 | Argo CD or SOPS bootstrap | `platform/argocd` and `scripts/gitops` |
+| Mesh routing or Prometheus scraping | `platform/k8s/components/mesh/istio`, `platform/k8s/components/observability/prometheus`, and `platform/helm` |
 | Release or digest promotion | `scripts/release` and `platform/k8s/components/images/staging` |
 | Documentation | `README.md` and `docs/` |
 

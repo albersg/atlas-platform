@@ -4,6 +4,9 @@
 the Argo CD and KSOPS flow, but uses local `:main` images on k3s so you can
 learn and validate without requiring published GHCR digests.
 
+If you remember one sentence, remember this one: `staging-local` teaches the real
+architecture locally, but it does not replace canonical digest-driven `staging`.
+
 In the current staged slice, `staging-local` is also the default target for the
 platform-infra applications under `platform/helm/istio/` and
 `platform/helm/prometheus/`, plus the first mesh-enabled workload overlay under
@@ -29,6 +32,9 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 - waits for the full infra app set before the workload application,
 - runs smoke checks.
 
+Expected outcome: your local k3s cluster now behaves like a rehearsal version of
+the real staging topology.
+
 ## Why this environment exists
 
 - to practice the GitOps workflow locally,
@@ -43,6 +49,14 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 - It is not the canonical `staging` environment.
 - It is not the digest-promotion path.
 - It is not a replacement for release verification.
+
+## How it differs from `dev` and canonical `staging`
+
+| Environment | Main goal | Image source | Traffic layer |
+| --- | --- | --- | --- |
+| `dev` | fast Kubernetes validation | local unique dev image builds | Traefik |
+| `staging-local` | rehearse the real GitOps topology locally | local `:main` refs | Istio NodePort gateway |
+| `staging` | real pre-production verification | GHCR digests | Istio staged gateway |
 
 ## Supporting commands
 
@@ -62,6 +76,9 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 - `mise run k8s-status-staging` now shows the `monitoring` namespace alongside the mesh runtime,
 - `mise run k8s-doctor` checks that the Prometheus Argo CD app, operator deployment, Prometheus StatefulSet, and service exist before you trust the environment.
 
+If Prometheus is healthy but the workload is missing from scrape targets, inspect
+the workload `ServiceMonitor` next.
+
 ## Current mesh notes
 
 - hostnames stay `staging.atlas.example.com` and `api.staging.atlas.example.com`, but `staging-local` reaches them through the Istio gateway NodePort (`32080` for HTTP, `32443` reserved for a later HTTPS cutover) rather than host ports `80/443`,
@@ -75,4 +92,5 @@ ARGOCD_APP_REVISION=<remote-branch-or-commit> mise run gitops-deploy-staging
 ## Read next
 
 - [Canonical staging](canonical-staging.md)
+- [Monitoring](monitoring.md)
 - [Staging promotion](staging-promotion.md)

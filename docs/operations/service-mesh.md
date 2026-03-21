@@ -1,7 +1,20 @@
 # Service Mesh
 
-Atlas Platform now has a separate platform-infra path for Istio plus a first
-workload onboarding slice for staging overlays.
+Atlas Platform uses Istio as the staged service-mesh layer for `staging-local` and
+canonical `staging`. This page explains what that means without assuming prior mesh
+knowledge.
+
+## What a service mesh means here
+
+A service mesh is an extra networking layer around services. In this repo, Istio is
+used to control staged ingress, workload-to-workload traffic behavior, and sidecar
+injection for the staged environments.
+
+If you are brand new to the topic, remember this:
+
+- `dev` does not use the staged mesh path.
+- `staging-local` and `staging` do.
+- That is why traffic behavior differs between environments.
 
 ## What landed in this slice
 
@@ -22,6 +35,13 @@ workload onboarding slice for staging overlays.
 | Helm | upstream platform add-ons under `platform/helm` |
 | Istio | staged non-production service-mesh infrastructure |
 | Kyverno | repository policy checks across rendered outputs |
+
+## Why Istio exists in this repo
+
+- to make the staged path closer to a real platform topology,
+- to separate the simple `dev` ingress path from the richer staged ingress path,
+- to validate mesh onboarding incrementally instead of all at once,
+- to keep staged routing explicit in Git.
 
 ## Current boundary
 
@@ -60,9 +80,14 @@ Use those commands to prove the wrapper charts, pinned versions, environment val
 
 ## What is still pending
 
-- live proof that the full `staging-local` rollout converges end to end on a real cluster from the updated Git state,
-- any post-onboarding hardening beyond the current permissive first wave.
+- later hardening beyond the current permissive first wave.
 
 ## Rollback for this slice
 
 If the first mesh wave needs to be backed out, remove `../../components/mesh/istio` from the staging overlays, resync the Atlas workload app, and keep using the Traefik-backed `dev` flow while leaving the Helm-managed Istio infra apps available for further rehearsal.
+
+## Read next
+
+- [Monitoring](monitoring.md)
+- [Staging-local](staging-local.md)
+- [Canonical staging](canonical-staging.md)

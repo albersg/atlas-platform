@@ -1,7 +1,8 @@
 # Operations Overview
 
 This section explains how Atlas Platform moves from local development into the
-repository's non-production platform workflows.
+repository's non-production platform workflows. Read it as an environment ladder:
+start simple, then add more platform concepts only when you need them.
 
 ## Platform toolchain at a glance
 
@@ -10,14 +11,15 @@ repository's non-production platform workflows.
 | Kubernetes or `k8s` | the target platform model for cluster-based environments |
 | k3s | the lightweight local Kubernetes distribution used for `dev` and `staging-local` |
 | `kubectl` | the direct CLI for inspecting cluster resources |
-| Kustomize | builds environment-specific overlays, patches, and KSOPS-backed secret composition |
 | Helm | defines reusable workload and platform add-on bases, including upstream chart wrappers |
+| Kustomize | builds environment-specific overlays, patches, and KSOPS-backed secret composition |
 | Argo CD | reconciles Git-defined state into the cluster |
 | GitOps | the operating model that says Git is the desired source of truth |
 | SOPS and age | keep secrets encrypted while still storing them in the repo |
 | KSOPS | decrypts SOPS files during Kustomize rendering |
 | Istio | provides the staged non-production service-mesh layer |
 | Kyverno | enforces repository policy rules over rendered manifests |
+| Prometheus and `ServiceMonitor` | collect and define staged monitoring targets |
 | Trivy, Cosign, Syft, SBOMs | protect the image release and promotion path |
 
 ## Read this section in order
@@ -26,11 +28,12 @@ repository's non-production platform workflows.
 2. [k3s dev environment](k3s-dev.md)
 3. [GitOps bootstrap](gitops-bootstrap.md)
 4. [Service mesh](service-mesh.md)
-5. [Staging-local](staging-local.md)
-6. [Canonical staging](canonical-staging.md)
-7. [Backup and restore](backup-restore.md)
-8. [Release workflow](release-workflow.md)
-9. [Staging promotion](staging-promotion.md)
+5. [Monitoring](monitoring.md)
+6. [Staging-local](staging-local.md)
+7. [Canonical staging](canonical-staging.md)
+8. [Backup and restore](backup-restore.md)
+9. [Release workflow](release-workflow.md)
+10. [Staging promotion](staging-promotion.md)
 
 ## Environment model
 
@@ -40,6 +43,20 @@ repository's non-production platform workflows.
 | `dev` | validate Kubernetes overlays with local images | `k8s-build-images`, `k8s-import-images`, `k8s-deploy-dev` |
 | `staging-local` | rehearse Argo CD + SOPS on a local cluster | `gitops-deploy-staging` |
 | `staging` | canonical pre-production path | digest promotion plus Argo CD reconciliation |
+
+## The final architecture in plain language
+
+- Helm owns reusable packages.
+- Kustomize owns environment adaptation.
+- Argo CD owns continuous reconciliation for staged environments.
+- SOPS plus age plus KSOPS own encrypted secret rendering.
+- Kyverno owns rendered-manifest policy checks.
+- Istio owns staged mesh traffic.
+- Prometheus owns staged monitoring.
+
+If you remember only one rule, remember this one: do not move environment-specific
+logic into Helm when Kustomize should own it, and do not move reusable platform
+packaging into Kustomize when Helm should own it.
 
 ## Important boundaries
 
@@ -51,8 +68,21 @@ repository's non-production platform workflows.
 - Atlas workloads stay in the workload Argo CD boundary, while Istio and Prometheus live in the infra boundary.
 - The platform-infra bundle currently includes Istio plus a minimal Prometheus stack in the dedicated `monitoring` namespace.
 - Istio now owns the staged mesh path for `staging-local` and `staging`, while `dev` intentionally stays on Traefik.
+- Prometheus now owns the first monitoring slice, while workload scrape intent stays in workload-owned `ServiceMonitor` objects.
 - Kubernetes knowledge matters most from `dev` onward; Compose is intentionally a simpler first step.
 - Production is intentionally outside the repo's current operational scope.
+
+## Choose the right next page
+
+| If you need to understand... | Read this |
+| --- | --- |
+| the fastest local full-stack loop | [Local Compose](local-compose.md) |
+| local Kubernetes without GitOps | [k3s dev environment](k3s-dev.md) |
+| how Argo CD, SOPS, and KSOPS are bootstrapped | [GitOps bootstrap](gitops-bootstrap.md) |
+| why staged traffic uses Istio | [Service mesh](service-mesh.md) |
+| how metrics are scraped and where Prometheus lives | [Monitoring](monitoring.md) |
+| why `staging-local` and canonical `staging` are different | [Staging-local](staging-local.md) and [Canonical staging](canonical-staging.md) |
+| how released images reach staging | [Release workflow](release-workflow.md) and [Staging promotion](staging-promotion.md) |
 
 ## Where the deep detail lives
 

@@ -1,77 +1,87 @@
-# Mapa del monorepo
+# Monorepo Component Map
 
-Esta pagina resume que existe hoy en el monorepo y como se reparte la responsabilidad
-entre aplicacion, plataforma y automatizacion.
+This page is the quick reference for what exists in the monorepo and which layer
+owns which responsibility.
 
-## Aplicaciones y servicios
+## Application surfaces
 
 ### `apps/web`
 
-- frontend React + Vite + TypeScript,
-- se ejecuta con `mise run frontend-dev`,
-- participa en Compose, en imagenes OCI y en el flujo de release.
+- React + Vite + TypeScript frontend,
+- runs with `mise run frontend-dev`,
+- participates in Compose, image release, and staged deployments.
 
 ### `services/inventory-service`
 
-- servicio backend operativo del repositorio,
-- usa FastAPI, SQLAlchemy y Alembic,
-- expone health checks y endpoints de products,
-- mantiene type checking y tests propios.
+- active backend service,
+- uses FastAPI, SQLAlchemy, and Alembic,
+- exposes health checks, API routes, and metrics,
+- owns backend tests and type checks.
 
-Referencia: `services/inventory-service/README.md`
+Reference: `services/inventory-service/README.md`
 
 ### `services/billing-service`
 
-- scaffold para un futuro bounded context,
-- pensado para invoice generation, payment intent orchestration y billing event outbox,
-- conserva la misma base hexagonal + screaming que el resto del dominio.
+- scaffold for a future bounded context,
+- keeps the same hexagonal and screaming architecture style.
 
-Referencia: `services/billing-service/README.md`
+Reference: `services/billing-service/README.md`
 
-## Plataforma
+## Platform surfaces
+
+### `platform/helm`
+
+- reusable Helm packaging layer,
+- wrapper charts for Istio and Prometheus,
+- shared Atlas workload base inputs.
 
 ### `platform/k8s`
 
-- `base/`: recursos compartidos por entorno,
-- `components/`: bloques reutilizables,
-- `overlays/dev`: laboratorio local con imagenes locales,
-- `overlays/staging`: overlay preproductivo respaldado por registry,
-- `overlays/staging-local`: wrapper local para validar el flujo GitOps de `staging`.
+- `base/`: environment-neutral app manifests,
+- `components/`: reusable workload-side building blocks,
+- `overlays/dev`: local Kubernetes lab,
+- `overlays/staging-local`: local rehearsal of the staging topology,
+- `overlays/staging`: canonical pre-production overlay.
 
 ### `platform/argocd`
 
-- `core/`: instalacion de Argo CD y plugin KSOPS,
-- `apps/`: bundle GitOps de `staging`.
+- `core/`: Argo CD plus KSOPS bootstrap,
+- `apps/`: workload and infra application definitions.
 
-Referencia: `platform/argocd/README.md`
+Reference: `platform/argocd/README.md`
 
-## Scripts operativos
+### `platform/policy`
+
+- Kyverno policy bundles,
+- rules that validate workload and infra renders before rollout.
+
+## Automation surfaces
 
 ### `scripts/k3s`
 
-- `cluster/`: preflight, estado y acceso,
-- `images/`: build/import de imagenes,
-- `deploy/`: orquestacion de despliegue,
+- `cluster/`: readiness, status, and access helpers,
+- `images/`: image build and import helpers,
+- `deploy/`: local Kubernetes deployment flows,
 - `verify/`: smoke checks.
 
-Referencia: `scripts/k3s/README.md`
+Reference: `scripts/k3s/README.md`
 
 ### `scripts/gitops`
 
-- bootstrap de Argo CD,
-- render de overlays cifrados,
-- espera y despliegue de aplicaciones,
-- validacion de overlays y politicas.
+- Argo CD bootstrap helpers,
+- local render helpers for overlays and infra charts,
+- deployment and wait helpers,
+- overlay and policy validation.
 
 ### `scripts/release`
 
-- helpers para promocion por digest,
-- soporte a workflows de release y promocion.
+- digest promotion helpers,
+- trusted-image verification helpers.
 
-## Documentos raices importantes
+## Root documents worth knowing
 
-- `README.md`: landing page ejecutiva del repositorio.
-- `AGENTS.md`: contrato operativo para agentes.
-- `CONTRIBUTING.md`: reglas de colaboracion.
-- `SECURITY.md`: politica de seguridad.
-- `mise.toml`: mapa operativo de herramientas y tareas.
+- `README.md`: the repo landing page.
+- `AGENTS.md`: operating contract for agent sessions.
+- `CONTRIBUTING.md`: contributor workflow and PR expectations.
+- `SECURITY.md`: security reporting and secure-development rules.
+- `mise.toml`: source of truth for tools and canonical tasks.

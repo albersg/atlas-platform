@@ -1,14 +1,14 @@
-# Indice de ADRs
+# ADR Index
 
-Las ADRs (Architecture Decision Records) recogen elecciones que afectan a la
-estructura del repositorio, a la forma de escalarlo y a sus tradeoffs.
+ADRs (Architecture Decision Records) capture decisions that affect repository
+structure, scaling strategy, and long-term tradeoffs.
 
-## ADRs actuales
+## Current ADRs
 
 1. [0001 - Monorepo vs Multirepo](0001-monorepo-vs-multirepo.md)
 
-## Como usar este directorio
+## How to use this directory
 
-- añade una ADR cuando una decision cambie el modelo operativo o arquitectonico,
-- explica contexto, decision y consecuencias,
-- referencia la ADR desde `README.md` o desde la guia afectada si la decision altera un flujo existente.
+- add an ADR when a decision changes the operating or architectural model,
+- explain the context, decision, and consequences,
+- link the ADR from `README.md` or the affected guide when it changes a workflow.
