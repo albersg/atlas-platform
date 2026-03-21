@@ -4,6 +4,15 @@ Atlas Platform builds release images from `main` and treats those images as the
 source material for canonical staging. Release does not deploy by itself. It
 produces trusted artifacts that the promotion and GitOps flows can later use.
 
+## Four beginner terms to decode first
+
+| Term | Meaning here |
+| --- | --- |
+| OCI image | The packaged backend or frontend artifact that a container runtime can start. In practice you can read this as "container image." |
+| GHCR | GitHub Container Registry, the remote registry where this repo publishes release images. |
+| SBOM | A software bill of materials: a generated inventory of what is inside an image. |
+| attestation | Signed metadata attached to an artifact, such as proof that an SBOM belongs to a specific image digest. |
+
 ## What release is for in this repo
 
 This page explains the release side of the delivery story. Read it after you
@@ -53,6 +62,11 @@ The `Release Images` workflow in `.github/workflows/release-images.yml`:
 10. generates SPDX SBOMs,
 11. signs the image digests and attaches SBOM attestations,
 12. publishes the digests in the workflow summary.
+
+In plain language: GitHub Actions takes the code on `main`, turns it into two
+published images, checks them for known problems, records what is inside them,
+cryptographically signs them, and prints the exact immutable digests that later
+promotion should use.
 
 ## The tools behind each step
 

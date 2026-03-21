@@ -6,6 +6,19 @@ tool does, which part of the repo owns it, and when it becomes relevant.
 
 For the dense version, use the [tool ownership matrix](../reference/tool-ownership-matrix.md).
 
+## Five words to understand before the tables
+
+These words appear everywhere in the docs. If they feel fuzzy, the tool names
+will also feel fuzzy.
+
+| Word | Beginner-friendly meaning in this repo |
+| --- | --- |
+| task runner | A tool that gives you one short command instead of making you remember a long command chain. Here that tool is `mise`. |
+| package manager | A tool that installs and tracks dependencies. `uv` does that for Python and `npm` does it for frontend JavaScript or TypeScript packages. |
+| container image | A packaged filesystem plus startup command for running software the same way in multiple places. Docker builds these images. |
+| overlay | A set of environment-specific changes applied on top of a reusable base. In this repo Kustomize overlays answer questions like "what is different in `dev` vs `staging`?" |
+| digest | An immutable fingerprint for one exact published image. Tags such as `:main` can move; a digest such as `sha256:...` points to one exact artifact forever. |
+
 ## Start with the mental model
 
 Atlas Platform is one repo with four layers:
@@ -22,6 +35,17 @@ It does not.
 - `dev` adds Kubernetes.
 - `staging-local` adds the full GitOps architecture.
 - canonical `staging` adds immutable release and promotion rules.
+
+## One sentence for each major tool family
+
+- `mise` is the front door: it gives the repo one shared command menu.
+- `uv` and `npm` install dependencies and run backend or frontend commands.
+- Docker and Compose package and run the app locally in containers.
+- Kubernetes, k3s, and `kubectl` are the first cluster layer.
+- Helm and Kustomize build the manifests that describe what the cluster should run.
+- Argo CD watches Git and keeps staged clusters aligned with that Git state.
+- SOPS, age, and KSOPS keep secrets encrypted while still allowing renders.
+- Kyverno, Trivy, and Cosign add safety checks so staged delivery is not based on trust alone.
 
 ## Daily development tools
 

@@ -22,6 +22,27 @@ If you are still learning the tool names, read the
 [tooling primer](../getting-started/tooling-primer.md) first. This page is the
 "tell me exactly what the command does" reference.
 
+## Read command names like short workflow sentences
+
+Many command names are easier once you know the verbs:
+
+| Word in a command | Plain-language meaning |
+| --- | --- |
+| `bootstrap` | install or prepare the minimum prerequisites for a workflow |
+| `build` | create an artifact such as a frontend bundle or container image |
+| `render` | print the Kubernetes YAML that tools would produce before applying it |
+| `validate` | check that output against rules such as schema, policy, or trust requirements |
+| `deploy` | run the workflow that updates a live environment |
+| `wait` | keep checking until an async system such as Argo CD finishes converging |
+| `status` | show what is currently running |
+| `smoke` | run small end-to-end checks that prove the main path is alive |
+| `promote` | update Git to point an environment at a new trusted artifact |
+| `doctor` | run diagnosis checks that look for missing prerequisites or broken setup |
+
+That means a name like `gitops-render-staging` means "show me the staged GitOps
+manifests before anything touches the cluster," while `k8s-smoke-staging` means
+"run quick health checks against the staged environment that is already up."
+
 ## How commands compose in this repo
 
 Atlas Platform uses a layered command model:
