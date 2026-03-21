@@ -50,7 +50,7 @@ larger workflow.
 | SOPS and age | encrypted secrets in Git | secure overlay layer | encrypted overlays plus local `.gitops-local/age/keys.txt` | bootstrap, render, validation, promotion |
 | Kyverno | policy validation of rendered manifests | policy layer | `platform/policy/kyverno/**` | `k8s-validate-overlays`, `policy-check`, `ci` |
 | Istio | staged ingress and service mesh runtime | platform infra layer | `platform/helm/istio/**`, `platform/k8s/components/mesh/istio/**` | staged deploy, render, validation, smoke |
-| Prometheus | staged monitoring stack | platform infra plus workload observability split | `platform/helm/prometheus/**`, `platform/k8s/components/observability/prometheus/**` | staged deploy, render, status, smoke |
+| Prometheus | staged monitoring stack | Istio plus Prometheus stays the platform infra slice, with workload observability split separately | `platform/helm/prometheus/**`, `platform/k8s/components/observability/prometheus/**` | staged deploy, render, status, smoke |
 | Trivy, Syft, Cosign | release security, SBOM, and trusted-image verification | release and promotion layer | `.github/workflows/release-images.yml`, `scripts/release/verify-trusted-images.sh` | release workflow, promotion workflow, canonical staging verification |
 
 ## Setup and environment

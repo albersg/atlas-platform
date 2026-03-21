@@ -34,10 +34,13 @@ By the end of this guide you should have:
 
 ## Architecture contract in this flow
 
+- Helm is the reusable base layer.
+- Kustomize is the environment overlay layer.
 - Helm owns reusable bases under `platform/helm/`, including staged platform add-ons.
 - Kustomize owns environment overlays under `platform/k8s/overlays/`.
 - Workload-owned resources, such as the first `inventory-service` `ServiceMonitor`, stay in the workload layer even when they are meant for a shared infra system.
 - Argo CD owns continuous reconciliation after bootstrap, but it does not replace the repo-owned render model.
+- Do not encode the same environment-specific behavior in both Helm values and Kustomize overlays.
 
 That split matters because it keeps the repo teachable:
 
