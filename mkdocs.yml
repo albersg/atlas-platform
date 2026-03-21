@@ -22,6 +22,7 @@ nav:
       - Rebuild this platform by hand: getting-started/rebuild-this-platform.md
       - Choose your path: getting-started/choose-your-path.md
       - Learning path: getting-started/learning-path.md
+      - Policy-as-code basics: getting-started/policy-as-code-basics.md
       - First-day setup: getting-started/quickstart.md
       - Repository tour: getting-started/repository-map.md
       - Glossary: reference/glossary.md

@@ -31,6 +31,7 @@ Read these next:
 1. [Architecture overview](../architecture/overview.md)
 2. [Platform delivery architecture](../architecture/platform-delivery-architecture.md)
 3. [Deployment topology](../architecture/deployment-topology.md)
+4. [Policy-as-code basics](policy-as-code-basics.md)
 
 Outcome: you understand the final architecture and why each tool owns a different
 part of the system.

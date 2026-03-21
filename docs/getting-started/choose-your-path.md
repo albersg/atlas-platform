@@ -9,6 +9,15 @@ If you are brand new to the repo, start with
 If you want the full beginner journey in one strict sequence, use
 [Beginner study roadmap](beginner-study-roadmap.md).
 
+## Which beginner entry page should I choose?
+
+| Page | Best when you want to... | Use it instead of this page when... |
+| --- | --- | --- |
+| [Learning path](learning-path.md) | learn in broad phases | you want a shorter guided sequence, not a menu of routes |
+| [Beginner study roadmap](beginner-study-roadmap.md) | follow one exact page-by-page order | you do not want to choose at each step |
+| [Choose your path](choose-your-path.md) | start from a specific job to be done | your goal is already clear |
+| [Rebuild this platform by hand](rebuild-this-platform.md) | recreate the architecture in another repo | you want an implementation roadmap more than an onboarding route |
+
 ## Intent routes
 
 ### I want to understand the repo
@@ -21,6 +30,18 @@ Read in this order:
 4. [Platform delivery architecture](../architecture/platform-delivery-architecture.md)
 
 Read next after that: [Learning path](learning-path.md) if you want the full beginner journey, or [Daily workflow and change lifecycle](../development/END_TO_END_WORKFLOW.md) if you are ready to contribute.
+
+### I want to understand policy-as-code
+
+Read in this order:
+
+1. [Policy-as-code basics](policy-as-code-basics.md)
+2. [Platform delivery architecture](../architecture/platform-delivery-architecture.md)
+3. [Deployment topology](../architecture/deployment-topology.md)
+4. [Quality and CI](../development/quality-and-ci.md)
+5. [Troubleshooting](../reference/troubleshooting.md)
+
+Read next after that: [GitOps bootstrap](../operations/gitops-bootstrap.md) if you want to see where render-and-validate fits operationally.
 
 ### I want to make a code change
 
