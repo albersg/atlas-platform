@@ -18,6 +18,7 @@ nav:
   - Start Here:
       - What is Atlas Platform?: getting-started/what-is-atlas-platform.md
       - Tooling primer: getting-started/tooling-primer.md
+      - Choose your path: getting-started/choose-your-path.md
       - Learning path: getting-started/learning-path.md
       - First-day setup: getting-started/quickstart.md
       - Repository tour: getting-started/repository-map.md
@@ -55,6 +56,7 @@ nav:
       - Agent-first DevSecOps playbook: AGENT_FIRST_DEVSECOPS_PLAYBOOK.md
   - Reference:
       - Command reference: reference/commands.md
+      - Tool ownership matrix: reference/tool-ownership-matrix.md
       - Configuration and environment variables: reference/configuration.md
       - Troubleshooting: reference/troubleshooting.md
       - Monorepo component map: reference/components.md

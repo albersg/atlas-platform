@@ -86,6 +86,7 @@ Read [Monitoring](../operations/monitoring.md) for the operator view.
 
 ## Read next
 
-1. [Deployment topology](deployment-topology.md)
-2. [Operations overview](../operations/overview.md)
-3. [GitOps bootstrap](../operations/gitops-bootstrap.md)
+- If you wanted to compare Helm, Kustomize, Argo CD, Istio, and Prometheus by environment, read [Deployment topology](deployment-topology.md) next.
+- If you wanted the operator-facing environment ladder, read [Operations overview](../operations/overview.md) next.
+- If you wanted to see this architecture become a working staged cluster, read [GitOps bootstrap](../operations/gitops-bootstrap.md) next.
+- If you wanted a route for another goal, go back to [Choose your path](../getting-started/choose-your-path.md).
