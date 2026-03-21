@@ -3,6 +3,7 @@
 This documentation is organized as a learning system for a beginner. Start with
 repo purpose, then learn the tools, then learn the architecture, then practice
 the development and operations workflows in that order.
+If you already know your goal, jump to [Choose your path](getting-started/choose-your-path.md).
 
 ## Recommended reading order
 
@@ -33,9 +34,29 @@ the development and operations workflows in that order.
 | Change backend code or migrations | [Backend development](development/backend-development.md) and [Database and migrations](development/database-migrations.md) |
 | Change frontend code | [Frontend development](development/frontend-development.md) |
 | Update docs safely | [Docs workflow](development/docs-workflow.md) |
+| Follow a route by job instead of reading linearly | [Choose your path](getting-started/choose-your-path.md) |
 | Understand validation and GitHub Actions | [Quality and CI](development/quality-and-ci.md) |
 | Learn k3s, GitOps, staging, monitoring, or promotion | [Operations overview](operations/overview.md) |
 | Look up commands, env vars, or error recovery | [Command reference](reference/commands.md), [Configuration reference](reference/configuration.md), and [Troubleshooting](reference/troubleshooting.md) |
+
+## Intent-first routes
+
+Use these when you want the docs to tell you what to read next, not just what a
+page covers:
+
+| If your intent is... | Start here | Then read |
+| --- | --- | --- |
+| understand the repo | [What is Atlas Platform?](getting-started/what-is-atlas-platform.md) | [Repository tour](getting-started/repository-map.md) -> [Architecture overview](architecture/overview.md) -> [Platform delivery architecture](architecture/platform-delivery-architecture.md) |
+| make a code change | [Daily workflow and change lifecycle](development/END_TO_END_WORKFLOW.md) | [Local development](development/local-development.md) -> the relevant backend, frontend, database, or docs guide -> [Quality and CI](development/quality-and-ci.md) |
+| change platform or Kubernetes config | [Platform delivery architecture](architecture/platform-delivery-architecture.md) | [Operations overview](operations/overview.md) -> [Configuration reference](reference/configuration.md) -> the relevant `dev`, `staging-local`, or `staging` guide |
+| learn Helm vs Kustomize here | [Platform delivery architecture](architecture/platform-delivery-architecture.md) | [Operations overview](operations/overview.md) -> [GitOps bootstrap](operations/gitops-bootstrap.md) -> [Tool ownership matrix](reference/tool-ownership-matrix.md) |
+| bootstrap GitOps | [GitOps bootstrap](operations/gitops-bootstrap.md) | [Staging-local](operations/staging-local.md) -> [GitOps runbook](deployment/gitops/ARGOCD_SOPS_RUNBOOK.md) |
+| use `staging-local` | [Staging-local](operations/staging-local.md) | [Service mesh](operations/service-mesh.md) -> [Monitoring](operations/monitoring.md) -> [Canonical staging](operations/canonical-staging.md) |
+| promote to canonical staging | [Release workflow](operations/release-workflow.md) | [Staging promotion](operations/staging-promotion.md) -> [Canonical staging](operations/canonical-staging.md) -> [Image promotion runbook](deployment/releases/IMAGE_PROMOTION.md) |
+| troubleshoot something | [Troubleshooting](reference/troubleshooting.md) | [Command reference](reference/commands.md) -> [Configuration reference](reference/configuration.md) -> the failing workflow guide |
+| replicate this architecture in another repo | [Architecture overview](architecture/overview.md) | [Platform delivery architecture](architecture/platform-delivery-architecture.md) -> [Operating model](project/operating-model.md) -> [Governance](project/governance.md) |
+
+For the full routed version, use [Choose your path](getting-started/choose-your-path.md).
 
 ## Environment journey
 

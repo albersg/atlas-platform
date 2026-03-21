@@ -93,6 +93,7 @@ in `mise.toml` and then the script it calls.
 
 ## Read next
 
-- [Glossary](../reference/glossary.md)
-- [Daily workflow and change lifecycle](../development/END_TO_END_WORKFLOW.md)
-- [Monorepo component map](../reference/components.md)
+- If you wanted repo orientation, read [Architecture overview](../architecture/overview.md) next.
+- If you wanted to start changing code, read [Daily workflow and change lifecycle](../development/END_TO_END_WORKFLOW.md) next.
+- If you wanted exact component ownership, read [Monorepo component map](../reference/components.md) next.
+- If you wanted a broader beginner route, go back to [Choose your path](choose-your-path.md).
