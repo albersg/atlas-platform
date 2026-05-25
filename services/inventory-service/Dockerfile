@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:0.10.8 AS uv
 
-FROM python:3.12-slim AS build
+FROM python:3.14.5-slim AS build
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -24,7 +24,7 @@ RUN uv sync --locked --no-editable && \
     chmod +x /app/scripts/start.sh /app/scripts/migrate.sh && \
     find /app -type d -name '__pycache__' -prune -exec rm -rf {} +
 
-FROM python:3.12-slim
+FROM python:3.14.5-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
