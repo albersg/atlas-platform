@@ -10,13 +10,13 @@
     "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "dependencies": {
-    "@sentry/react": "^10.42.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "@sentry/react": "^10.53.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.4",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
