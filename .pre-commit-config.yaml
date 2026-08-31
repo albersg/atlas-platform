@@ -41,12 +41,12 @@ repos:
         stages: [manual]
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.0
+    rev: 0.38.0
     hooks:
       - id: check-github-workflows
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.11
+    rev: v1.7.12
     hooks:
       - id: actionlint
 
@@ -57,13 +57,13 @@ repos:
         exclude: ^(platform/argocd/core/upstream/install-v2\.13\.3\.yaml|platform/k8s/overlays/.*/secrets/.*\.enc\.yaml|platform/helm/.*/templates/.*\.ya?ml)$
 
   - repo: https://github.com/crate-ci/typos
-    rev: a8d8e187146634c459c27ade2d3e338569378720 # frozen: v1.44.0 # pragma: allowlist secret
+    rev: v1
     hooks:
       - id: typos
         exclude: ^\.sops\.yaml$
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.21.0
+    rev: v0.23.2
     hooks:
       - id: markdownlint-cli2
 
@@ -81,7 +81,7 @@ repos:
         args: [--verbose]
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.22.0
+    rev: v1.30.0
     hooks:
       - id: zizmor
         stages: [manual]
